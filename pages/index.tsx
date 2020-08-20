@@ -176,6 +176,8 @@ export default function HomePage() {
                           .then(() => getUserData(passwordToUse))
                           .then(json => setUserData(arrayToUser(json)))
                           .catch(err => setErrorMessage(err.toString()));
+                      } else {
+                        setUserData(arrayToUser(json));
                       }
                     } else {
                       setErrorMessage('Unable to find any matching accounts');
