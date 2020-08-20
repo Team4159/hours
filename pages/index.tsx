@@ -58,7 +58,7 @@ const arrayToUser = (array: Array<string>): User => ({
   totalTime: moment.duration(array[4], 'seconds')
 });
 
-const formatDuration = (duration: moment.Duration): string => duration.seconds() > 0 ? moment.utc(duration.asMilliseconds()).format('HH:mm:ss') : '00:00:00';
+const formatDuration = (duration: moment.Duration): string => moment.utc(Math.max(0, duration.asMilliseconds())).format('HH:mm:ss');
 
 export default function HomePage() {
   const [userData, setUserData] = useState<User>(null);
