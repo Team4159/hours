@@ -3,6 +3,10 @@ html, body, #__next {
     margin: 0;
 }
 
-input {
+input, textarea {
     box-sizing: border-box;
+}
+
+h2, p {
+    margin: 0;
 }
