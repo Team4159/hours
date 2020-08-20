@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import {
   Box,
@@ -69,6 +69,8 @@ export default function HomePage() {
 
   const [modalShown, setModalShown] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const storedPassword = localStorage.getItem('password');
@@ -219,7 +221,12 @@ export default function HomePage() {
       <Modal
         isCentered
         isOpen={modalShown}
-        onClose={() => setModalShown(false)}
+        initialFocusRef={textAreaRef}
+        onClose={(e, reason) => {
+          if (reason != 'clickedOverlay') {
+            setModalShown(false);
+          }
+        }}
       >
         <ModalOverlay/>
         <ModalContent rounded='md'>
@@ -234,6 +241,7 @@ export default function HomePage() {
                 fontFamily='body'
                 value={writeUp}
                 onChange={e => setWriteUp(e.target.value)}
+                ref={ref => textAreaRef.current = ref}
               />
               <Button
                 variant='solid'
