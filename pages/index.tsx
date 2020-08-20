@@ -37,14 +37,14 @@ type User = {
 };
 
 const getUserData = (password: string): Promise<Array<string>> => {
-  return fetch(process.env.NEXT_PUBLIC_API_URL + '/src/endpoints/getuserdata.php?' + new URLSearchParams({
+  return fetch('/api/src/endpoints/getuserdata.php?' + new URLSearchParams({
     password
   }))
     .then(res => res.json());
 }
 
 const signInOut = (password: string): Promise<string> => {
-  return fetch(process.env.NEXT_PUBLIC_API_URL + '/src/endpoints/signin.php?' + new URLSearchParams({
+  return fetch('/api/src/endpoints/signin.php?' + new URLSearchParams({
     password
   }))
     .then(res => res.text());
@@ -61,12 +61,14 @@ const arrayToUser = (array: Array<string>): User => ({
 const formatDuration = (duration: moment.Duration): string => duration.seconds() > 0 ? moment.utc(duration.asMilliseconds()).format('HH:mm:ss') : '00:00:00';
 
 export default function HomePage() {
-  const [password, setPassword] = useState('');
   const [userData, setUserData] = useState<User>(null);
-  const [errorMessage, setErrorMessage] = useState('');
   const [currentTime, setCurrentTime] = useState(moment());
-  const [modalShown, setModalShown] = useState(false);
+
+  const [password, setPassword] = useState('');
   const [writeUp, setWriteUp] = useState('');
+
+  const [modalShown, setModalShown] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const storedPassword = localStorage.getItem('password');
