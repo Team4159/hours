@@ -26,6 +26,7 @@ import {
 
 import moment from 'moment';
 import 'moment-timezone';
+import 'moment-duration-format';
 
 moment.tz.setDefault('Atlantic/Azores');
 
@@ -59,10 +60,8 @@ const arrayToUser = (array: Array<string>): User => ({
   totalTime: moment.duration(array[4], 'seconds')
 });
 
-const formatDuration = (duration: moment.Duration): string => moment.utc(Math.max(0, duration.asMilliseconds())).format('HH:mm:ss');
-
 const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) => void }> = (
-  { children, onLoadStart, ...props }
+  { children, isDisabled, onLoadStart, ...props }
 ) => {
   const [isLoading, setIsLoading] = useState(false);
   const callback = () => {
@@ -72,7 +71,7 @@ const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) =
   return (
     <Button
       {...props}
-      isDisabled={isLoading}
+      isDisabled={isLoading || isDisabled}
       onClick={e => {
         if (!isLoading) {
           setIsLoading(true);
@@ -172,11 +171,14 @@ export default function HomePage() {
                   {userData.signedIn ? 'Session' : 'Total'} Time
                 </StatLabel>
                 <StatNumber>
-                  {formatDuration(userData.signedIn ? moment.duration(currentTime.diff(userData.lastSignedIn)) : userData.totalTime)}
+                  {(userData.signedIn ? moment.duration(Math.max(currentTime.diff(userData.lastSignedIn), 0)) : userData.totalTime).format('hh:mm:ss', {
+                    minValue: 0,
+                    trim: false
+                  })}
                 </StatNumber>
                 <StatHelpText>
                   {userData.signedIn ?
-                    `Total Time: ${formatDuration(userData.totalTime)}` :
+                    `Total Time: ${userData.totalTime.format('hh:mm:ss', { trim: false })}` :
                     'Make sure to sign in if you\'re doing work!'}
                 </StatHelpText>
               </Stat>
