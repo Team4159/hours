@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Button,
+  ButtonProps,
   Flex,
   Heading,
   Image,
@@ -60,6 +61,30 @@ const arrayToUser = (array: Array<string>): User => ({
 
 const formatDuration = (duration: moment.Duration): string => moment.utc(Math.max(0, duration.asMilliseconds())).format('HH:mm:ss');
 
+const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) => void }> = (
+  { children, onLoadStart, ...props }
+) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const callback = () => {
+    setIsLoading(false);
+  };
+
+  return (
+    <Button
+      {...props}
+      isDisabled={isLoading}
+      onClick={e => {
+        if (!isLoading) {
+          setIsLoading(true);
+          onLoadStart(callback);
+        }
+      }}
+    >
+      {isLoading ? 'Loading...' : children}
+    </Button>
+  );
+};
+
 export default function HomePage() {
   const [userData, setUserData] = useState<User>(null);
   const [currentTime, setCurrentTime] = useState(moment());
@@ -68,6 +93,7 @@ export default function HomePage() {
   const [writeUp, setWriteUp] = useState('');
 
   const [modalShown, setModalShown] = useState(false);
+  const [modalErrorMessage, setModalErrorMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -160,10 +186,10 @@ export default function HomePage() {
         { errorMessage && <Text color='red.400'>{errorMessage}</Text> }
         <Stack isInline>
           { !userData || !userData.signedIn ? (
-            <Button
+            <LoadButton
               variant='outline'
               variantColor='cardinalbotics.red'
-              onClick={() => {
+              onLoadStart={callback => {
                 const passwordToUse = userData ? userData.password : password;  
                 getUserData(passwordToUse)
                   .then(json => {
@@ -175,19 +201,25 @@ export default function HomePage() {
                         signInOut(passwordToUse)
                           .then(() => getUserData(passwordToUse))
                           .then(json => setUserData(arrayToUser(json)))
-                          .catch(err => setErrorMessage(err.toString()));
+                          .catch(err => setErrorMessage(err.toString()))
+                          .finally(callback);
                       } else {
                         setUserData(arrayToUser(json));
+                        callback();
                       }
                     } else {
                       setErrorMessage('Unable to find any matching accounts');
+                      callback();
                     }
                   })
-                  .catch(err => setErrorMessage(err.toString()));
+                  .catch(err => {
+                    setErrorMessage(err.toString());
+                    callback();
+                  });
               }}
             >
               Sign In
-            </Button>
+            </LoadButton>
           ) : (
             <Button
               variant='outline'
@@ -245,23 +277,27 @@ export default function HomePage() {
                 onChange={e => setWriteUp(e.target.value)}
                 ref={ref => textAreaRef.current = ref}
               />
-              <Button
+              { modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text> }
+              <LoadButton
                 variant='solid'
                 variantColor='cardinalbotics.red'
                 isDisabled={!writeUp}
-                onClick={() => {
+                onLoadStart={callback => {
                   const storedPassword = userData.password;
-                  setErrorMessage('');
+                  setModalErrorMessage('');
                   signInOut(storedPassword)
                     .then(() => getUserData(storedPassword))
-                    .then(json => setUserData(arrayToUser(json)))
-                    .catch(err => setErrorMessage(err.toString()));
-                  setWriteUp('');
-                  setModalShown(false);
+                    .then(json => {
+                      setUserData(arrayToUser(json));
+                      setWriteUp('');
+                      setModalShown(false);
+                    })
+                    .catch(err => setModalErrorMessage(err.toString()))
+                    .finally(callback);
                 }}
               >
                 Submit
-              </Button>
+              </LoadButton>
             </Stack>
           </ModalBody>
         </ModalContent>
