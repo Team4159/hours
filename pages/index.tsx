@@ -60,8 +60,8 @@ const arrayToUser = (array: Array<string>): User => ({
   totalTime: moment.duration(array[4], 'seconds')
 });
 
-const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) => void }> = (
-  { children, isDisabled, onLoadStart, ...props }
+const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) => void, innerRef?: React.Ref<HTMLButtonElement> }> = (
+  { children, innerRef, isDisabled, onLoadStart, ...props }
 ) => {
   const [isLoading, setIsLoading] = useState(false);
   const callback = () => {
@@ -71,6 +71,7 @@ const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) =
   return (
     <Button
       {...props}
+      ref={innerRef}
       isDisabled={isLoading || isDisabled}
       onClick={e => {
         if (!isLoading) {
@@ -96,6 +97,7 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const signInButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const storedPassword = localStorage.getItem('password');
@@ -140,6 +142,11 @@ export default function HomePage() {
                 placeholder='Password'
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key == 'Enter') {
+                    signInButtonRef.current.click();
+                  }
+                }}
                 paddingY={6}
               />
             </Box>
@@ -191,6 +198,7 @@ export default function HomePage() {
             <LoadButton
               variant='outline'
               variantColor='cardinalbotics.red'
+              innerRef={ref => signInButtonRef.current = ref}
               onLoadStart={callback => {
                 const passwordToUse = userData ? userData.password : password;  
                 getUserData(passwordToUse)
@@ -258,7 +266,7 @@ export default function HomePage() {
         isCentered
         isOpen={modalShown}
         initialFocusRef={textAreaRef}
-        onClose={(e, reason) => {
+        onClose={(_, reason) => {
           if (reason != 'clickedOverlay') {
             setModalShown(false);
           }
