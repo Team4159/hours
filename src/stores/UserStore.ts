@@ -14,7 +14,7 @@ export default class UserStore {
       const storedPassword = localStorage.getItem('password');
       if (storedPassword) {
         this.password = storedPassword;
-        this.fetchUserData(this.password)
+        this.fetchUserData()
           .catch(console.error);
       }
     }
