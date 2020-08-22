@@ -7,6 +7,10 @@ input, textarea {
     box-sizing: border-box;
 }
 
+input {
+    border: 0;
+}
+
 h2, p {
     margin: 0;
 }

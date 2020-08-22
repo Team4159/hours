@@ -5,6 +5,7 @@ import {
   Button,
   Flex,
   Heading,
+  IconButton,
   Image,
   Input,
   Modal,
@@ -14,7 +15,6 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
-  PseudoBox,
   Stack,
   Stat,
   StatHelpText,
@@ -150,9 +150,12 @@ const Account = observer(() => {
 
   const [currentTime, setCurrentTime] = useState(moment());
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
   const [isLoading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const [isChangingPassword, setChangingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     if (userStore.userData.signedIn) {
@@ -175,15 +178,36 @@ const Account = observer(() => {
         </Stat>
         <Stat>
           <StatLabel>Password</StatLabel>
-          <PseudoBox
-            backgroundColor='black'
-            _hover={{backgroundColor: 'transparent'}}
-            userSelect='none'
-            cursor='pointer'
-            transition='0.3s all'
-          >
-            <StatNumber>{userStore.userData.password}</StatNumber>
-          </PseudoBox>
+          <Stack isInline alignItems='center'>
+            {isChangingPassword ? (
+              <Input
+                size='sm'
+                height='30px'
+                variant='flushed'
+                _focus={{ borderBottomColor: 'cardinalbotics.red.400' }}
+                fontFamily='body'
+                fontSize='xl'
+                fontWeight='bold'
+                placeholder='New Password'
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+              />
+            ): (
+              <StatNumber>
+                {userStore.userData.password}
+              </StatNumber>
+            )}
+            <IconButton
+              size='xs'
+              variant='outline'
+              variantColor='cardinalbotics.red'
+              aria-label={isChangingPassword ? 'Check' : 'Edit'}
+              icon={isChangingPassword ? 'check' : 'edit'}
+              onClick={() => {
+                setChangingPassword(!isChangingPassword);
+              }}
+            />
+          </Stack>
         </Stat>
       </Stack>
       <Stat>
@@ -222,7 +246,7 @@ const Account = observer(() => {
                 .catch(err => setErrorMessage(err.toString()))
                 .finally(() => setLoading(false));
             } else {
-              setIsModalOpen(true);
+              setModalOpen(true);
             }
           }}
         >
@@ -247,7 +271,7 @@ const Account = observer(() => {
         onClose={(_, reason) => {
           if (reason != 'clickedOverlay') {
             setLoading(false);
-            setIsModalOpen(false);
+            setModalOpen(false);
           }
         }}
       />
