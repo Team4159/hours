@@ -33,14 +33,6 @@ import 'moment-duration-format';
 
 moment.tz.setDefault('Atlantic/Azores');
 
-type User = {
-  name: string;
-  password: string;
-  signedIn: boolean;
-  lastSignedIn: moment.Moment;
-  totalTime: moment.Duration;
-};
-
 const Onboarding = () => {
   const userStore = useContext(UserContext);
   
