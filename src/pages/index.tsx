@@ -19,9 +19,10 @@ import {
   Stat,
   StatHelpText,
   StatLabel,
+  StatNumber,
   Text,
   Textarea,
-  StatNumber
+  useToast
 } from '@chakra-ui/core';
 
 import { action } from 'mobx';
@@ -41,6 +42,8 @@ const Onboarding = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setLoading] = useState(false);
 
+  const toast = useToast();
+
   return (
     <Stack
       as='form'
@@ -56,7 +59,11 @@ const Onboarding = () => {
               return userStore.signInOut();
             }
           })
-          .then(() => {})
+          .then(() => toast({
+            title: 'Signed in.',
+            description: 'You\'ve  successfully been signed in and your password has been remembered.',
+            status: 'success'
+          }))
           .catch(err => {
             setErrorMessage(err.toString());
             userStore.password = null;
@@ -97,6 +104,8 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
+  const toast = useToast();
+
   return useObserver(() => (
     <Modal
       {...props}
@@ -131,6 +140,11 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
                   .then(() => {
                     setWriteUp('');
                     onClose(null);
+                    toast({
+                      title: 'Signed out.',
+                      description: 'You\'ve successfully been signed out and your session has been saved.',
+                      status: 'success'
+                    });
                   })
                   .catch(err => setModalErrorMessage(err.toString()))
                   .finally(() => setModalLoading(false));
@@ -156,6 +170,8 @@ const Account = observer(() => {
 
   const [isChangingPassword, setChangingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+
+  const toast = useToast();
 
   useEffect(() => {
     if (userStore.userData.signedIn) {
@@ -204,6 +220,13 @@ const Account = observer(() => {
               aria-label={isChangingPassword ? 'Check' : 'Edit'}
               icon={isChangingPassword ? 'check' : 'edit'}
               onClick={() => {
+                if (isChangingPassword) {
+                  toast({
+                    title: 'Password changed.',
+                    description: 'You\'ve successfully changed your password.',
+                    status: 'success'
+                  });
+                }
                 setChangingPassword(!isChangingPassword);
               }}
             />
@@ -243,6 +266,11 @@ const Account = observer(() => {
             setLoading(true);
             if (!userStore.userData.signedIn) {
               userStore.signInOut()
+                .then(() => toast({
+                  title: 'Signed in.',
+                  description: 'You\'ve successfully been signed in.',
+                  status: 'success'
+                }))
                 .catch(err => setErrorMessage(err.toString()))
                 .finally(() => setLoading(false));
             } else {
@@ -260,6 +288,11 @@ const Account = observer(() => {
             onClick={action(() => {
               setErrorMessage('');
               userStore.forgetPassword();
+              toast({
+                title: 'Password forgotten.',
+                description: 'You\'ve successfully forgotten your password and you will no longer be automatically signed in.',
+                status: 'success'
+              });
             })}
           >
             Forget Password
