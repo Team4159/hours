@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 
 import {
   Box,
   Button,
-  ButtonProps,
   Flex,
   Heading,
   Image,
@@ -23,6 +22,10 @@ import {
   Textarea,
   StatNumber
 } from '@chakra-ui/core';
+
+import { action } from 'mobx';
+import { useObserver } from 'mobx-react';
+import { UserContext } from '@/stores/UserStore';
 
 import moment from 'moment';
 import 'moment-timezone';
@@ -52,74 +55,119 @@ const signInOut = (password: string): Promise<string> => {
     .then(res => res.text());
 }
 
-const arrayToUser = (array: Array<string>): User => ({
-  name: array[0],
-  password: array[1],
-  signedIn: array[2] == 'TRUE',
-  lastSignedIn: moment.unix(parseInt(array[3])),
-  totalTime: moment.duration(array[4], 'seconds')
-});
-
-const LoadButton: React.FC<ButtonProps & { onLoadStart: (callback: () => void) => void, innerRef?: React.Ref<HTMLButtonElement> }> = (
-  { children, innerRef, isDisabled, onLoadStart, ...props }
-) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const callback = () => {
-    setIsLoading(false);
-  };
+const Onboarding = () => {
+  const userStore = useContext(UserContext);
+  
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setLoading] = useState(false);
 
   return (
-    <Button
-      {...props}
-      ref={innerRef}
-      isDisabled={isLoading || isDisabled}
-      onClick={e => {
-        if (!isLoading) {
-          setIsLoading(true);
-          onLoadStart(callback);
-        }
+    <Stack
+      as='form'
+      width='100%'
+      onSubmit={e => {
+        e.preventDefault();
+        setErrorMessage('');
+        setLoading(true);
+        userStore.fetchUserData(password)
+          .then(action(user => {
+            userStore.password = password;
+            if (!user.signedIn) {
+              return userStore.signInOut();
+            }
+          }))
+          .catch(err => setErrorMessage(err.toString()))
+          .finally(() => setLoading(false));
       }}
+      alignItems='start'
     >
-      {isLoading ? 'Loading...' : children}
-    </Button>
+      <Box width='100%'>
+        <Input
+          isFullWidth
+          variant='filled'
+          placeholder='Password'
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          paddingY={6}
+        />
+      </Box>
+      {errorMessage && <Text color='red.400'>{errorMessage}</Text>}
+      <Button
+        variant='outline'
+        variantColor='cardinalbotics.red'
+        type='submit'
+        isDisabled={isLoading}
+      >
+        {isLoading ? 'Loading...' : 'Sign In'}
+      </Button>
+    </Stack>
   );
-};
+}
 
-export default function HomePage() {
-  const [userData, setUserData] = useState<User>(null);
+const Timer: React.FC<{ since: moment.Moment }> = ({ since }) => {
+
+}
+
+const Account = () => {
+  const userStore = useContext(UserContext);
+
+  return useObserver(() => (
+    <Stack width='100%'>
+      <Heading fontSize='3xl' color={userStore.userData.signedIn ? 'green.400' : 'red.400'}>
+        {!userStore.userData.signedIn && 'Not '}Signed In
+      </Heading>
+      <Stack isInline>
+        <Stat>
+          <StatLabel>Name</StatLabel>
+          <StatNumber>{userStore.userData.name}</StatNumber>
+        </Stat>
+        <Stat>
+          <StatLabel>Password</StatLabel>
+          <PseudoBox
+            backgroundColor='black'
+            _hover={{backgroundColor: 'transparent'}}
+            userSelect='none'
+            cursor='pointer'
+            transition='0.3s all'
+          >
+            <StatNumber>{userStore.userData.password}</StatNumber>
+          </PseudoBox>
+        </Stat>
+      </Stack>
+      <Stat>
+        <StatLabel>
+          {userStore.userData.signedIn ? 'Session' : 'Total'} Time
+        </StatLabel>
+        <StatNumber>
+          {/*{(userStore.userData.signedIn ? moment.duration(Math.max(currentTime.diff(userStore.userData.lastSignedIn), 0)) : userStore.userData.totalTime).format('hh:mm:ss', {
+            minValue: 0,
+            trim: false
+          })}*/}
+        </StatNumber>
+        <StatHelpText>
+          {userStore.userData.signedIn ?
+            `Total Time: ${userStore.userData.totalTime.format('hh:mm:ss', { trim: false })}` :
+            'Make sure to sign in if you\'re doing work!'}
+        </StatHelpText>
+      </Stat>
+    </Stack>
+  ));
+}
+
+const HomePage = () => {
+  const userStore = useContext(UserContext);
+
   const [currentTime, setCurrentTime] = useState(moment());
 
-  const [password, setPassword] = useState('');
   const [writeUp, setWriteUp] = useState('');
 
   const [modalShown, setModalShown] = useState(false);
   const [modalErrorMessage, setModalErrorMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const signInButtonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    const storedPassword = localStorage.getItem('password');
-    if (storedPassword) {
-      getUserData(storedPassword)
-        .then(json => {
-          if (json != null) {
-            setUserData(arrayToUser(json));
-          }
-        });
-    }
-  }, []);
-  useEffect(() => {
-    if (userData && userData.signedIn) {
-      const interval = setInterval(() => {
-        setCurrentTime(moment());
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [userData && userData.signedIn]);
-
-  return (
+  return useObserver(() => (
     <Stack height='100%' alignItems='center' spacing={5}>
       <Flex
         direction='row'
@@ -133,74 +181,17 @@ export default function HomePage() {
       <Box flexGrow={1}/>
       <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading>
       <Stack alignItems='start' width={['80%', '65%', '50%']}>
-        {
-          !userData ? (
-            <Box width='100%'>
-              <Input
-                isFullWidth
-                variant='filled'
-                placeholder='Password'
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key == 'Enter') {
-                    signInButtonRef.current.click();
-                  }
-                }}
-                paddingY={6}
-              />
-            </Box>
-          ) : (
-            <Stack width='100%'>
-              <Heading fontSize='3xl' color={userData.signedIn ? 'green.400' : 'red.400'}>
-                {!userData.signedIn && 'Not '}Signed In
-              </Heading>
-              <Stack isInline>
-                <Stat>
-                  <StatLabel>Name</StatLabel>
-                  <StatNumber>{userData.name}</StatNumber>
-                </Stat>
-                <Stat>
-                  <StatLabel>Password</StatLabel>
-                  <PseudoBox
-                    backgroundColor='black'
-                    _hover={{backgroundColor: 'transparent'}}
-                    userSelect='none'
-                    cursor='pointer'
-                    transition='0.3s all'
-                  >
-                    <StatNumber>{userData.password}</StatNumber>
-                  </PseudoBox>
-                </Stat>
-              </Stack>
-              <Stat>
-                <StatLabel>
-                  {userData.signedIn ? 'Session' : 'Total'} Time
-                </StatLabel>
-                <StatNumber>
-                  {(userData.signedIn ? moment.duration(Math.max(currentTime.diff(userData.lastSignedIn), 0)) : userData.totalTime).format('hh:mm:ss', {
-                    minValue: 0,
-                    trim: false
-                  })}
-                </StatNumber>
-                <StatHelpText>
-                  {userData.signedIn ?
-                    `Total Time: ${userData.totalTime.format('hh:mm:ss', { trim: false })}` :
-                    'Make sure to sign in if you\'re doing work!'}
-                </StatHelpText>
-              </Stat>
-            </Stack>
-          )
-        }
-        { errorMessage && <Text color='red.400'>{errorMessage}</Text> }
+        { !userStore.userData ? <Onboarding/> : <Account/> }
+        {/*
         <Stack isInline>
-          { !userData || !userData.signedIn ? (
-            <LoadButton
+          { !userStore.userData || !userStore.userData.signedIn ? (
+            <Button
               variant='outline'
               variantColor='cardinalbotics.red'
-              innerRef={ref => signInButtonRef.current = ref}
-              onLoadStart={callback => {
-                const passwordToUse = userData ? userData.password : password;  
+              onClick={action(() => {
+                if (!userStore.userData) {
+                  userStore.password = password;
+                }
                 getUserData(passwordToUse)
                   .then(json => {
                     if (json != null) {
@@ -209,12 +200,10 @@ export default function HomePage() {
                       const user = arrayToUser(json);
                       if (!user.signedIn) {
                         signInOut(passwordToUse)
-                          .then(() => getUserData(passwordToUse))
-                          .then(json => setUserData(arrayToUser(json)))
+                          .then(userStore.refreshUserData)
                           .catch(err => setErrorMessage(err.toString()))
                           .finally(callback);
                       } else {
-                        setUserData(arrayToUser(json));
                         callback();
                       }
                     } else {
@@ -226,10 +215,10 @@ export default function HomePage() {
                     setErrorMessage(err.toString());
                     callback();
                   });
-              }}
+              })}
             >
               Sign In
-            </LoadButton>
+            </Button>
           ) : (
             <Button
               variant='outline'
@@ -241,25 +230,25 @@ export default function HomePage() {
               Sign Out
             </Button>
           ) }
-          { userData && !userData.signedIn && (
+          { userStore.userData && !userStore.userData.signedIn && (
             <Button
               variant='solid'
               variantColor='cardinalbotics.red'
               onClick={() => {
-                const storedPassword = userData.password;
+                const storedPassword = userStore.userData.password;
                 setErrorMessage('');
-                if (userData.signedIn) {
+                if (userStore.userData.signedIn) {
                   signInOut(storedPassword)
                     .catch(err => setErrorMessage(err.toString()));
                 }
                 localStorage.removeItem('password');
-                setUserData(null);
               }}
             >
               Forget Password
             </Button>
           ) }
         </Stack>
+        */}
       </Stack>
       <Box flexGrow={6}/>
       <Modal
@@ -288,30 +277,30 @@ export default function HomePage() {
                 ref={ref => textAreaRef.current = ref}
               />
               { modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text> }
-              <LoadButton
+              <Button
                 variant='solid'
                 variantColor='cardinalbotics.red'
                 isDisabled={!writeUp}
-                onLoadStart={callback => {
-                  const storedPassword = userData.password;
+                onClick={() => {
+                  const storedPassword = userStore.userData.password;
                   setModalErrorMessage('');
                   signInOut(storedPassword)
                     .then(() => getUserData(storedPassword))
                     .then(json => {
-                      setUserData(arrayToUser(json));
                       setWriteUp('');
                       setModalShown(false);
                     })
                     .catch(err => setModalErrorMessage(err.toString()))
-                    .finally(callback);
                 }}
               >
                 Submit
-              </LoadButton>
+              </Button>
             </Stack>
           </ModalBody>
         </ModalContent>
       </Modal>
     </Stack>
-  );
+  ));
 }
+
+export default HomePage;

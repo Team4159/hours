@@ -16,12 +16,28 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "experimentalDecorators": true,
+    "baseUrl": "src",
+    "paths": {
+      "@/models/*": [
+        "models/*"
+      ],
+      "@/pages/*": [
+        "pages/*"
+      ],
+      "@/stores/*": [
+        "stores/*"
+      ],
+      "@/styles/*": [
+        "styles/*"
+      ],
+    }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.tsx", "pages/api/[...args].js"
+    "**/*.tsx", "src/pages/api/[...args].js"
   ],
   "exclude": [
     "node_modules"
