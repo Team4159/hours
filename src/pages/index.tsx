@@ -8,6 +8,7 @@ import {
   Image,
   Input,
   Modal,
+  IModal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
@@ -87,20 +88,71 @@ const Onboarding = () => {
   );
 }
 
-const Account = observer(() => {
+const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props }) => {
   const userStore = useContext(UserContext);
 
-  const [currentTime, setCurrentTime] = useState(moment());
-
-  const [isLoading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalLoading, setModalLoading] = useState(false);
   const [writeUp, setWriteUp] = useState('');
   const [modalErrorMessage, setModalErrorMessage] = useState('');
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  return useObserver(() => (
+    <Modal
+      {...props}
+      onClose={onClose}
+      isCentered
+      initialFocusRef={textAreaRef}
+    >
+      <ModalOverlay/>
+      <ModalContent rounded='md'>
+        <ModalHeader>
+          <Text>Write-Up</Text>
+        </ModalHeader>
+        <ModalCloseButton/>
+        <ModalBody>
+          <Stack alignItems='start'>
+            <Textarea
+              placeholder='Write about what you did today...'
+              fontFamily='body'
+              value={writeUp}
+              onChange={e => setWriteUp(e.target.value)}
+              ref={ref => textAreaRef.current = ref}
+            />
+            { modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text> }
+            <Button
+              variant='solid'
+              variantColor='cardinalbotics.red'
+              isDisabled={!writeUp || isModalLoading}
+              onClick={() => {
+                setModalErrorMessage('');
+                setModalLoading(true);
+                userStore.signInOut()
+                  .then(() => {
+                    setWriteUp('');
+                    onClose(null);
+                  })
+                  .catch(err => setModalErrorMessage(err.toString()))
+                  .finally(() => setModalLoading(false));
+              }}
+            >
+              {isModalLoading ? 'Loading...' : 'Submit'}
+            </Button>
+          </Stack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  ));
+}
+
+const Account = observer(() => {
+  const userStore = useContext(UserContext);
+
+  const [currentTime, setCurrentTime] = useState(moment());
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (userStore.userData.signedIn) {
@@ -161,7 +213,6 @@ const Account = observer(() => {
         <Button
           variant='outline'
           variantColor='cardinalbotics.red'
-          type='submit'
           isDisabled={isLoading}
           onClick={() => {
             setErrorMessage('');
@@ -181,6 +232,7 @@ const Account = observer(() => {
           <Button
             variant='solid'
             variantColor='cardinalbotics.red'
+            isDisabled={isLoading}
             onClick={action(() => {
               setErrorMessage('');
               userStore.forgetPassword();
@@ -190,56 +242,15 @@ const Account = observer(() => {
           </Button>
         ) }
       </Stack>
-      <Modal
-        isCentered
+      <SignOutModal
         isOpen={isModalOpen}
-        initialFocusRef={textAreaRef}
         onClose={(_, reason) => {
           if (reason != 'clickedOverlay') {
             setLoading(false);
             setIsModalOpen(false);
           }
         }}
-      >
-        <ModalOverlay/>
-        <ModalContent rounded='md'>
-          <ModalHeader>
-            <Text>Write-Up</Text>
-          </ModalHeader>
-          <ModalCloseButton/>
-          <ModalBody>
-            <Stack alignItems='start'>
-              <Textarea
-                placeholder='Write about what you did today...'
-                fontFamily='body'
-                value={writeUp}
-                onChange={e => setWriteUp(e.target.value)}
-                ref={ref => textAreaRef.current = ref}
-              />
-              { modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text> }
-              <Button
-                variant='solid'
-                variantColor='cardinalbotics.red'
-                isDisabled={!writeUp || isModalLoading}
-                onClick={() => {
-                  setModalErrorMessage('');
-                  setModalLoading(true);
-                  userStore.signInOut()
-                    .then(() => {
-                      setWriteUp('');
-                      setIsModalOpen(false);
-                      setLoading(false);
-                    })
-                    .catch(err => setModalErrorMessage(err.toString()))
-                    .finally(() => setModalLoading(false));
-                }}
-              >
-                {isModalLoading ? 'Loading...' : 'Submit'}
-              </Button>
-            </Stack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      />
     </Stack>
   );
 });
