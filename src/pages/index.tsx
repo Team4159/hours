@@ -24,7 +24,7 @@ import {
 } from '@chakra-ui/core';
 
 import { action } from 'mobx';
-import { useObserver } from 'mobx-react';
+import { useObserver, observer } from 'mobx-react';
 import { UserContext } from '@/stores/UserStore';
 
 import moment from 'moment';
@@ -41,20 +41,6 @@ type User = {
   totalTime: moment.Duration;
 };
 
-const getUserData = (password: string): Promise<Array<string>> => {
-  return fetch('/api/src/endpoints/getuserdata.php?' + new URLSearchParams({
-    password
-  }))
-    .then(res => res.json());
-}
-
-const signInOut = (password: string): Promise<string> => {
-  return fetch('/api/src/endpoints/signin.php?' + new URLSearchParams({
-    password
-  }))
-    .then(res => res.text());
-}
-
 const Onboarding = () => {
   const userStore = useContext(UserContext);
   
@@ -70,14 +56,18 @@ const Onboarding = () => {
         e.preventDefault();
         setErrorMessage('');
         setLoading(true);
-        userStore.fetchUserData(password)
-          .then(action(user => {
-            userStore.password = password;
+        userStore.password = password;
+        userStore.fetchUserData(false)
+          .then(user => {
             if (!user.signedIn) {
               return userStore.signInOut();
             }
-          }))
-          .catch(err => setErrorMessage(err.toString()))
+          })
+          .then(() => {})
+          .catch(err => {
+            setErrorMessage(err.toString());
+            userStore.password = null;
+          })
           .finally(() => setLoading(false));
       }}
       alignItems='start'
@@ -105,14 +95,31 @@ const Onboarding = () => {
   );
 }
 
-const Timer: React.FC<{ since: moment.Moment }> = ({ since }) => {
-
-}
-
-const Account = () => {
+const Account = observer(() => {
   const userStore = useContext(UserContext);
 
-  return useObserver(() => (
+  const [currentTime, setCurrentTime] = useState(moment());
+
+  const [isLoading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalLoading, setModalLoading] = useState(false);
+  const [writeUp, setWriteUp] = useState('');
+  const [modalErrorMessage, setModalErrorMessage] = useState('');
+
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (userStore.userData.signedIn) {
+      const interval = setInterval(() => {
+        setCurrentTime(moment());
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [userStore.userData.signedIn]);
+
+  return (
     <Stack width='100%'>
       <Heading fontSize='3xl' color={userStore.userData.signedIn ? 'green.400' : 'red.400'}>
         {!userStore.userData.signedIn && 'Not '}Signed In
@@ -140,10 +147,16 @@ const Account = () => {
           {userStore.userData.signedIn ? 'Session' : 'Total'} Time
         </StatLabel>
         <StatNumber>
-          {/*{(userStore.userData.signedIn ? moment.duration(Math.max(currentTime.diff(userStore.userData.lastSignedIn), 0)) : userStore.userData.totalTime).format('hh:mm:ss', {
-            minValue: 0,
-            trim: false
-          })}*/}
+          {
+            (
+              userStore.userData.signedIn ?
+              moment.duration(Math.max(currentTime.diff(userStore.userData.lastSignedIn), 0)) :
+              userStore.userData.totalTime
+            ).format('hh:mm:ss', {
+              minValue: 0,
+              trim: false
+            })
+          }
         </StatNumber>
         <StatHelpText>
           {userStore.userData.signedIn ?
@@ -151,113 +164,48 @@ const Account = () => {
             'Make sure to sign in if you\'re doing work!'}
         </StatHelpText>
       </Stat>
-    </Stack>
-  ));
-}
-
-const HomePage = () => {
-  const userStore = useContext(UserContext);
-
-  const [currentTime, setCurrentTime] = useState(moment());
-
-  const [writeUp, setWriteUp] = useState('');
-
-  const [modalShown, setModalShown] = useState(false);
-  const [modalErrorMessage, setModalErrorMessage] = useState('');
-
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-
-  return useObserver(() => (
-    <Stack height='100%' alignItems='center' spacing={5}>
-      <Flex
-        direction='row'
-        alignSelf='stretch'
-        justifyContent='center'
-        backgroundColor='cardinalbotics.red.400'
-        paddingY={3}
-      >
-        <Image src='/logo.png'/>
-      </Flex>
-      <Box flexGrow={1}/>
-      <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading>
-      <Stack alignItems='start' width={['80%', '65%', '50%']}>
-        { !userStore.userData ? <Onboarding/> : <Account/> }
-        {/*
-        <Stack isInline>
-          { !userStore.userData || !userStore.userData.signedIn ? (
-            <Button
-              variant='outline'
-              variantColor='cardinalbotics.red'
-              onClick={action(() => {
-                if (!userStore.userData) {
-                  userStore.password = password;
-                }
-                getUserData(passwordToUse)
-                  .then(json => {
-                    if (json != null) {
-                      setErrorMessage('');
-                      localStorage.setItem('password', passwordToUse)
-                      const user = arrayToUser(json);
-                      if (!user.signedIn) {
-                        signInOut(passwordToUse)
-                          .then(userStore.refreshUserData)
-                          .catch(err => setErrorMessage(err.toString()))
-                          .finally(callback);
-                      } else {
-                        callback();
-                      }
-                    } else {
-                      setErrorMessage('Unable to find any matching accounts');
-                      callback();
-                    }
-                  })
-                  .catch(err => {
-                    setErrorMessage(err.toString());
-                    callback();
-                  });
-              })}
-            >
-              Sign In
-            </Button>
-          ) : (
-            <Button
-              variant='outline'
-              variantColor='cardinalbotics.red'
-              onClick={() => {
-                setModalShown(true);
-              }}
-            >
-              Sign Out
-            </Button>
-          ) }
-          { userStore.userData && !userStore.userData.signedIn && (
-            <Button
-              variant='solid'
-              variantColor='cardinalbotics.red'
-              onClick={() => {
-                const storedPassword = userStore.userData.password;
-                setErrorMessage('');
-                if (userStore.userData.signedIn) {
-                  signInOut(storedPassword)
-                    .catch(err => setErrorMessage(err.toString()));
-                }
-                localStorage.removeItem('password');
-              }}
-            >
-              Forget Password
-            </Button>
-          ) }
-        </Stack>
-        */}
+      {errorMessage && <Text color='red.400'>{errorMessage}</Text>}
+      <Stack isInline>
+        <Button
+          variant='outline'
+          variantColor='cardinalbotics.red'
+          type='submit'
+          isDisabled={isLoading}
+          onClick={() => {
+            setErrorMessage('');
+            setLoading(true);
+            if (!userStore.userData.signedIn) {
+              userStore.signInOut()
+                .catch(err => setErrorMessage(err.toString()))
+                .finally(() => setLoading(false));
+            } else {
+              setIsModalOpen(true);
+            }
+          }}
+        >
+          {isLoading ? 'Loading...' : (userStore.userData.signedIn ? 'Sign Out' : 'Sign In')}
+        </Button>
+        { !userStore.userData.signedIn && (
+          <Button
+            variant='solid'
+            variantColor='cardinalbotics.red'
+            onClick={action(() => {
+              setErrorMessage('');
+              userStore.forgetPassword();
+            })}
+          >
+            Forget Password
+          </Button>
+        ) }
       </Stack>
-      <Box flexGrow={6}/>
       <Modal
         isCentered
-        isOpen={modalShown}
+        isOpen={isModalOpen}
         initialFocusRef={textAreaRef}
         onClose={(_, reason) => {
           if (reason != 'clickedOverlay') {
-            setModalShown(false);
+            setLoading(false);
+            setIsModalOpen(false);
           }
         }}
       >
@@ -280,25 +228,50 @@ const HomePage = () => {
               <Button
                 variant='solid'
                 variantColor='cardinalbotics.red'
-                isDisabled={!writeUp}
+                isDisabled={!writeUp || isModalLoading}
                 onClick={() => {
-                  const storedPassword = userStore.userData.password;
                   setModalErrorMessage('');
-                  signInOut(storedPassword)
-                    .then(() => getUserData(storedPassword))
-                    .then(json => {
+                  setModalLoading(true);
+                  userStore.signInOut()
+                    .then(() => {
                       setWriteUp('');
-                      setModalShown(false);
+                      setIsModalOpen(false);
+                      setLoading(false);
                     })
                     .catch(err => setModalErrorMessage(err.toString()))
+                    .finally(() => setModalLoading(false));
                 }}
               >
-                Submit
+                {isModalLoading ? 'Loading...' : 'Submit'}
               </Button>
             </Stack>
           </ModalBody>
         </ModalContent>
       </Modal>
+    </Stack>
+  );
+});
+
+const HomePage = () => {
+  const userStore = useContext(UserContext);
+
+  return useObserver(() => (
+    <Stack height='100%' alignItems='center' spacing={5}>
+      <Flex
+        direction='row'
+        alignSelf='stretch'
+        justifyContent='center'
+        backgroundColor='cardinalbotics.red.400'
+        paddingY={3}
+      >
+        <Image src='/logo.png'/>
+      </Flex>
+      <Box flexGrow={1}/>
+      <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading>
+      <Stack alignItems='start' width={['80%', '65%', '50%']}>
+        { !userStore.userData ? <Onboarding/> : <Account/> }
+      </Stack>
+      <Box flexGrow={6}/>
     </Stack>
   ));
 }

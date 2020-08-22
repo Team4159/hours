@@ -20,16 +20,14 @@ export default class UserStore {
     }
 
     autorun(() => {
-      if (this.password != null) {
-        localStorage.setItem('password', this.password);
-      }
+      localStorage.setItem('password', this.password);
     });
   }
 
   @action.bound
-  fetchUserData(password: string): Promise<User> {
+  fetchUserData(set: boolean = true): Promise<User> {
     return fetch('/api/src/endpoints/getuserdata.php?' + new URLSearchParams({
-      password
+      password: this.password
     }))
       .then(res => res.json())
       .then(json => {
@@ -37,21 +35,24 @@ export default class UserStore {
           throw new Error('Unable to find any matching accounts');
         } else {
           const user = UserStore.arrayToUser(json);
-          this.userData = user;
+          if (set) {
+            this.userData = user;
+          }
           return user;
         }
       });
   }
 
-  signInOut(): Promise<string> {
+  signInOut(): Promise<User> {
     return fetch('/api/src/endpoints/signin.php?' + new URLSearchParams({
       password: this.password
     }))
-      .then(res => res.text())
-      .then(text => {
-        this.fetchUserData(this.password);
-        return text;
-      });
+      .then(() => this.fetchUserData());
+  }
+
+  forgetPassword() {
+    this.password = null;
+    this.userData = null;
   }
 
   static arrayToUser(array: Array<string>): User {
