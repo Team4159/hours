@@ -35,6 +35,8 @@ import 'moment-duration-format';
 
 moment.tz.setDefault('Atlantic/Azores');
 
+const HELP_TEXT = 'If this error was unexpected, contact Kai or Ling on Slack.';
+
 const Onboarding = () => {
   const userStore = useContext(UserContext);
   
@@ -82,7 +84,12 @@ const Onboarding = () => {
           paddingY={6}
         />
       </Box>
-      {errorMessage && <Text color='red.400'>{errorMessage}</Text>}
+      {errorMessage && (
+        <Text color='red.400'>
+          {errorMessage}<br/>
+          {HELP_TEXT}
+        </Text>
+      )}
       <Button
         variant='outline'
         variantColor='cardinalbotics.red'
@@ -255,7 +262,12 @@ const Account = observer(() => {
             'Make sure to sign in if you\'re doing work!'}
         </StatHelpText>
       </Stat>
-      {errorMessage && <Text color='red.400'>{errorMessage}</Text>}
+      {errorMessage && (
+        <Text color='red.400'>
+          {errorMessage}<br/>
+          {HELP_TEXT}
+        </Text>
+      )}
       <Stack isInline>
         <Button
           variant='outline'
