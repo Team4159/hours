@@ -20,7 +20,11 @@ export default class UserStore {
     }
 
     autorun(() => {
-      localStorage.setItem('password', this.password);
+      if (this.password == null) {
+        localStorage.removeItem('password');
+      } else {
+        localStorage.setItem('password', this.password);
+      }
     });
   }
 
@@ -29,23 +33,33 @@ export default class UserStore {
     return fetch('/api/src/endpoints/getuserdata.php?' + new URLSearchParams({
       password: this.password
     }))
+      .then(res => {
+        if (res.status == 500) {
+          throw new Error('Unable to find any matching accounts.');
+        }
+        return res;
+      })
       .then(res => res.json())
       .then(json => {
-        if (json == null) {
-          throw new Error('Unable to find any matching accounts');
-        } else {
-          const user = UserStore.arrayToUser(json);
-          if (set) {
-            this.userData = user;
-          }
-          return user;
+        const user = UserStore.hydrateData(json);
+        if (set) {
+          this.userData = user;
         }
+        return user;
       });
   }
 
-  signInOut(): Promise<User> {
+  signIn(): Promise<User> {
     return fetch('/api/src/endpoints/signin.php?' + new URLSearchParams({
       password: this.password
+    }))
+      .then(() => this.fetchUserData());
+  }
+
+  signOut(did: string): Promise<User> {
+    return fetch('/api/src/endpoints/signout.php?' + new URLSearchParams({
+      password: this.password,
+      did
     }))
       .then(() => this.fetchUserData());
   }
@@ -55,13 +69,18 @@ export default class UserStore {
     this.userData = null;
   }
 
-  static arrayToUser(array: Array<string>): User {
+  static hydrateData(json: { [key: string]: any }): User {
     return {
-      name: array[0],
-      password: array[1],
-      signedIn: array[2] == 'TRUE',
-      lastSignedIn: moment.unix(parseInt(array[3])),
-      totalTime: moment.duration(array[4], 'seconds')
+      name: json['username'],
+      password: json['password'],
+      signedIn: json['signedIn'],
+      lastTime: moment.unix(json['lastTime']),
+      totalTime: moment.duration(json['totalTime'], 'seconds'),
+      sessions: json['sessions'].map(jsonSession => ({
+        date: moment.unix(jsonSession['date']),
+        did: jsonSession['did'],
+        time: moment.duration(jsonSession['time'], 'seconds')
+      }))
     };
   }
 }

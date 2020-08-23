@@ -58,7 +58,9 @@ const Onboarding = () => {
         userStore.fetchUserData(false)
           .then(user => {
             if (!user.signedIn) {
-              return userStore.signInOut();
+              return userStore.signIn();
+            } else {
+              userStore.userData = user;
             }
           })
           .then(() => toast({
@@ -143,7 +145,7 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
               onClick={() => {
                 setModalErrorMessage('');
                 setModalLoading(true);
-                userStore.signInOut()
+                userStore.signOut(writeUp)
                   .then(() => {
                     setWriteUp('');
                     onClose(null);
@@ -248,7 +250,7 @@ const Account = observer(() => {
           {
             (
               userStore.userData.signedIn ?
-              moment.duration(Math.max(currentTime.diff(userStore.userData.lastSignedIn), 0)) :
+              moment.duration(Math.max(currentTime.diff(userStore.userData.lastTime), 0)) :
               userStore.userData.totalTime
             ).format('hh:mm:ss', {
               minValue: 0,
@@ -277,7 +279,7 @@ const Account = observer(() => {
             setErrorMessage('');
             setLoading(true);
             if (!userStore.userData.signedIn) {
-              userStore.signInOut()
+              userStore.signIn()
                 .then(() => toast({
                   title: 'Signed in.',
                   description: 'You\'ve successfully been signed in.',

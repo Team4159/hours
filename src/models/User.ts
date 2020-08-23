@@ -1,7 +1,10 @@
+import Session from "./Session";
+
 export default interface User {
   name: string;
   password: string;
   signedIn: boolean;
-  lastSignedIn: moment.Moment;
+  lastTime: moment.Moment;
   totalTime: moment.Duration;
+  sessions: Session[];
 }
