@@ -1,9 +1,10 @@
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { Fragment, useContext, useEffect, useState, useRef } from 'react';
 
 import {
   Box,
   Button,
   Flex,
+  FlexProps,
   Heading,
   IconButton,
   Image,
@@ -16,6 +17,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Stack,
+  StackProps,
   Stat,
   StatHelpText,
   StatLabel,
@@ -33,7 +35,7 @@ import moment from 'moment';
 import 'moment-timezone';
 import 'moment-duration-format';
 
-moment.tz.setDefault('Atlantic/Azores');
+import { Session } from '@/models/Session';
 
 const HELP_TEXT = 'If this error was unexpected, contact Kai or Ling on Slack.';
 
@@ -66,7 +68,8 @@ const Onboarding = () => {
           .then(() => toast({
             title: 'Signed in.',
             description: 'You\'ve  successfully been signed in and your password has been remembered.',
-            status: 'success'
+            status: 'success',
+            duration: 2500
           }))
           .catch(err => {
             setErrorMessage(err.toString());
@@ -152,7 +155,8 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
                     toast({
                       title: 'Signed out.',
                       description: 'You\'ve successfully been signed out and your session has been saved.',
-                      status: 'success'
+                      status: 'success',
+                      duration: 2.5
                     });
                   })
                   .catch(err => setModalErrorMessage(err.toString()))
@@ -168,7 +172,7 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
   ));
 }
 
-const Account = observer(() => {
+const Account: React.FC<StackProps> = observer(props => {
   const userStore = useContext(UserContext);
 
   const [currentTime, setCurrentTime] = useState(moment());
@@ -192,8 +196,8 @@ const Account = observer(() => {
   }, [userStore.userData.signedIn]);
 
   return (
-    <Stack width='100%'>
-      <Heading fontSize='3xl' color={userStore.userData.signedIn ? 'green.400' : 'red.400'}>
+    <Stack rounded='lg' padding={6} backgroundColor='white' {...props}>
+      <Heading fontSize='4xl' color={userStore.userData.signedIn ? 'green.400' : 'red.400'}>
         {!userStore.userData.signedIn && 'Not '}Signed In
       </Heading>
       <Stack isInline>
@@ -233,7 +237,8 @@ const Account = observer(() => {
                   toast({
                     title: 'Password changed.',
                     description: 'You\'ve successfully changed your password.',
-                    status: 'success'
+                    status: 'success',
+                    duration: 2500
                   });
                 }
                 setChangingPassword(!isChangingPassword);
@@ -242,7 +247,7 @@ const Account = observer(() => {
           </Stack>
         </Stat>
       </Stack>
-      <Stat>
+      <Stat flexGrow={0}>
         <StatLabel>
           {userStore.userData.signedIn ? 'Session' : 'Total'} Time
         </StatLabel>
@@ -283,7 +288,8 @@ const Account = observer(() => {
                 .then(() => toast({
                   title: 'Signed in.',
                   description: 'You\'ve successfully been signed in.',
-                  status: 'success'
+                  status: 'success',
+                  duration: 2500
                 }))
                 .catch(err => setErrorMessage(err.toString()))
                 .finally(() => setLoading(false));
@@ -305,7 +311,8 @@ const Account = observer(() => {
               toast({
                 title: 'Password forgotten.',
                 description: 'You\'ve successfully forgotten your password and you will no longer be automatically signed in.',
-                status: 'success'
+                status: 'success',
+                duration: 2500
               });
             })}
           >
@@ -326,11 +333,66 @@ const Account = observer(() => {
   );
 });
 
+const SessionTableRow: React.FC<FlexProps & { session: Session }> = ({ session, ...props }) => {
+  const [isExpanded, setExpanded] = useState(false);
+
+  return (
+    <Flex direction='row' {...props}>
+      <Text flexBasis='10%' paddingX={6} paddingY={2}>
+        {session.date.clone().subtract(session.time).format('MMM Do')}
+      </Text>
+      <Text flexBasis='20%' paddingX={6} paddingY={3}>
+        {session.date.clone().subtract(session.time).format('LT')} - {session.date.format('LT')}
+      </Text>
+      <Text flexBasis='70%' paddingX={6} paddingY={2}>
+        {session.did.length > 500 ? (
+          <Fragment>
+            {!isExpanded ? session.did.slice(0, 500).concat('...') : session.did}
+            <Text cursor='pointer' color='cardinalbotics.red.400' onClick={() => setExpanded(!isExpanded)}>
+              {isExpanded ? 'Collpase' : 'Expand'}
+            </Text>
+          </Fragment>
+        ) : session.did}
+      </Text>
+    </Flex>
+  )
+}
+
+const SessionsTable: React.FC<FlexProps> = props => {
+  const userStore = useContext(UserContext);
+
+  return useObserver(() => (
+    <Flex direction='column' {...props}>
+      <Heading fontSize='3xl' textAlign='center' marginBottom={3}>
+        Past Sessions
+      </Heading>
+      <Flex roundedTop='lg' direction='row' backgroundColor='gray.300' fontWeight='bold'>
+        <Text flexBasis='10%' paddingX={6} paddingY={3}>
+          Date
+        </Text>
+        <Text flexBasis='20%' paddingX={6} paddingY={3}>
+          Time
+        </Text>
+        <Text flexBasis='70%' paddingX={6} paddingY={3}>
+          What Did You Do?
+        </Text>
+      </Flex>
+      {userStore.userData.sessions.reverse().map((session, idx) => (
+        <SessionTableRow
+          key={idx}
+          session={session}
+          backgroundColor={idx % 2 == 0 ? 'gray.100' : 'white'}
+        />
+      ))}
+    </Flex>
+  ));
+}
+
 const HomePage = () => {
   const userStore = useContext(UserContext);
 
   return useObserver(() => (
-    <Stack height='100%' alignItems='center' spacing={5}>
+    <Stack minHeight='100%' alignItems='center' spacing={5} backgroundColor='gray.200'>
       <Flex
         direction='row'
         alignSelf='stretch'
@@ -341,9 +403,14 @@ const HomePage = () => {
         <Image src='/logo.png'/>
       </Flex>
       <Box flexGrow={1}/>
-      <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading>
-      <Stack alignItems='start' width={['80%', '65%', '50%']}>
-        { !userStore.userData ? <Onboarding/> : <Account/> }
+      { !userStore.userData && <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading> }
+      <Stack alignItems='start' width={!userStore.userData ? ['80%', '65%', '50%'] : ['90%', '80%']}>
+        { !userStore.userData ? <Onboarding/> : (
+          <Stack width='100%' spacing={10}>
+            <Account flexGrow={1}/>
+            <SessionsTable flexGrow={2} marginBottom={10}/>
+          </Stack>
+        ) }
       </Stack>
       <Box flexGrow={6}/>
     </Stack>

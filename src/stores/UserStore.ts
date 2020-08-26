@@ -77,7 +77,7 @@ export default class UserStore {
       lastTime: moment.unix(json['lastTime']),
       totalTime: moment.duration(json['totalTime'], 'seconds'),
       sessions: json['sessions'].map(jsonSession => ({
-        date: moment.unix(jsonSession['date']),
+        date: moment.unix(parseInt(jsonSession['date'])),
         did: jsonSession['did'],
         time: moment.duration(jsonSession['time'], 'seconds')
       }))
