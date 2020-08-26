@@ -22,6 +22,11 @@ import {
   StatHelpText,
   StatLabel,
   StatNumber,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
   Text,
   Textarea,
   useToast
@@ -30,12 +35,13 @@ import {
 import { action } from 'mobx';
 import { useObserver, observer } from 'mobx-react';
 import { UserContext } from '@/stores/UserStore';
+import { TimeContext } from '@/stores/TimeStore';
 
 import moment from 'moment';
 import 'moment-timezone';
 import 'moment-duration-format';
 
-import { Session } from '@/models/Session';
+import Session from '@/models/Session';
 
 const HELP_TEXT = 'If this error was unexpected, contact Kai or Ling on Slack.';
 
@@ -174,8 +180,7 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
 
 const Account: React.FC<StackProps> = observer(props => {
   const userStore = useContext(UserContext);
-
-  const [currentTime, setCurrentTime] = useState(moment());
+  const timeStore = useContext(TimeContext);
 
   const [isModalOpen, setModalOpen] = useState(false);
   const [isLoading, setLoading] = useState(false);
@@ -185,15 +190,6 @@ const Account: React.FC<StackProps> = observer(props => {
   const [newPassword, setNewPassword] = useState('');
 
   const toast = useToast();
-
-  useEffect(() => {
-    if (userStore.userData.signedIn) {
-      const interval = setInterval(() => {
-        setCurrentTime(moment());
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [userStore.userData.signedIn]);
 
   return (
     <Stack rounded='lg' padding={6} backgroundColor='white' {...props}>
@@ -255,7 +251,7 @@ const Account: React.FC<StackProps> = observer(props => {
           {
             (
               userStore.userData.signedIn ?
-              moment.duration(Math.max(currentTime.diff(userStore.userData.lastTime), 0)) :
+              moment.duration(Math.max(timeStore.currentTime.diff(userStore.userData.lastTime), 0)) :
               userStore.userData.totalTime
             ).format('hh:mm:ss', {
               minValue: 0,
@@ -363,9 +359,6 @@ const SessionsTable: React.FC<FlexProps> = props => {
 
   return useObserver(() => (
     <Flex direction='column' {...props}>
-      <Heading fontSize='3xl' textAlign='center' marginBottom={3}>
-        Past Sessions
-      </Heading>
       <Flex roundedTop='lg' direction='row' backgroundColor='gray.300' fontWeight='bold'>
         <Text flexBasis='10%' paddingX={6} paddingY={3}>
           Date
@@ -388,6 +381,44 @@ const SessionsTable: React.FC<FlexProps> = props => {
   ));
 }
 
+const OtherUsersTable: React.FC<FlexProps> = props => {
+  const userStore = useContext(UserContext);
+  const timeStore = useContext(TimeContext);
+
+  return useObserver(() => (
+    <Flex direction='column' {...props}>
+      <Flex roundedTop='lg' direction='row' backgroundColor='gray.300' fontWeight='bold'>
+        <Text flexBasis='50%' paddingX={6} paddingY={3}>
+          Name
+        </Text>
+        <Text flexBasis='50%' paddingX={6} paddingY={3}>
+          Time In
+        </Text>
+      </Flex>
+      {
+        userStore.otherUserData
+          .filter(user => user.signedIn && user.name != userStore.userData.name)
+          .sort((a, b) => a.lastTime.diff(b.lastTime))
+          .map((user, idx) => (
+            <Flex key={idx} direction='row' backgroundColor={idx % 2 == 0 ? 'gray.100' : 'white'}>
+              <Text flexBasis='50%' paddingX={6} paddingY={2}>
+                {user.name}
+              </Text>
+              <Text flexBasis='50%' paddingX={6} paddingY={3}>
+                {
+                  moment.duration(timeStore.currentTime.diff(user.lastTime)).format('hh:mm:ss', {
+                    minValue: 0,
+                    trim: false
+                  })
+                }
+              </Text>
+            </Flex>
+          ))
+      }
+    </Flex>
+  ));
+}
+
 const HomePage = () => {
   const userStore = useContext(UserContext);
 
@@ -403,14 +434,27 @@ const HomePage = () => {
         <Image src='/logo.png'/>
       </Flex>
       <Box flexGrow={1}/>
-      { !userStore.userData && <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading> }
+      {!userStore.userData && <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading>}
       <Stack alignItems='start' width={!userStore.userData ? ['80%', '65%', '50%'] : ['90%', '80%']}>
-        { !userStore.userData ? <Onboarding/> : (
+        {!userStore.userData ? <Onboarding/> : (
           <Stack width='100%' spacing={10}>
-            <Account flexGrow={1}/>
-            <SessionsTable flexGrow={2} marginBottom={10}/>
+            <Account/>
+            <Tabs size='lg' variantColor='cardinalbotics.red' borderBottomColor='gray.300'>
+              <TabList>
+                <Tab marginRight={3}>Your Past Sessions</Tab>
+                <Tab>Other Active Members</Tab>
+              </TabList>
+              <TabPanels>
+                <TabPanel>
+                  <SessionsTable marginBottom={10}/>
+                </TabPanel>
+                <TabPanel>
+                  <OtherUsersTable/>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
           </Stack>
-        ) }
+        )}
       </Stack>
       <Box flexGrow={6}/>
     </Stack>

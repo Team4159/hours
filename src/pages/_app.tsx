@@ -1,4 +1,5 @@
 import UserStore, { UserContext } from '@/stores/UserStore';
+import TimeStore, { TimeContext } from '@/stores/TimeStore';
 
 import { ThemeProvider } from '@chakra-ui/core';
 import theme from '@/styles/theme';
@@ -9,7 +10,9 @@ function App({ Component, pageProps }) {
   return (
     <ThemeProvider theme={theme}>
       <UserContext.Provider value={new UserStore()}>
-        <Component {...pageProps}/>
+        <TimeContext.Provider value={new TimeStore()}>
+          <Component {...pageProps}/>
+        </TimeContext.Provider>
       </UserContext.Provider>
     </ThemeProvider>
   );

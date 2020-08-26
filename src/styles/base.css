@@ -7,7 +7,7 @@ input, textarea {
     box-sizing: border-box;
 }
 
-input {
+input, button {
     border: 0;
 }
 

@@ -9,6 +9,8 @@ export default class UserStore {
   @observable userData: User = null;
   @observable password: string = null;
 
+  @observable otherUserData = observable([] as User[]);
+
   constructor() {
     if (typeof localStorage != 'undefined') {
       const storedPassword = localStorage.getItem('password');
@@ -26,6 +28,19 @@ export default class UserStore {
         localStorage.setItem('password', this.password);
       }
     });
+
+    this.fetchOtherUserData();
+  }
+
+  @action.bound
+  fetchOtherUserData(): Promise<User[]> {
+    return fetch('/api/src/endpoints/getdata.php')
+      .then(res => res.json())
+      .then(json => {
+        const otherUsers = json.map(UserStore.hydrateData);
+        this.otherUserData.replace(otherUsers);
+        return otherUsers;
+      });
   }
 
   @action.bound
@@ -34,7 +49,7 @@ export default class UserStore {
       password: this.password
     }))
       .then(res => {
-        if (res.status == 500) {
+        if (res.status == 404) {
           throw new Error('Unable to find any matching accounts.');
         }
         return res;
@@ -76,11 +91,11 @@ export default class UserStore {
       signedIn: json['signedIn'],
       lastTime: moment.unix(json['lastTime']),
       totalTime: moment.duration(json['totalTime'], 'seconds'),
-      sessions: json['sessions'].map(jsonSession => ({
+      sessions: json['sessions'] ? json['sessions'].map(jsonSession => ({
         date: moment.unix(parseInt(jsonSession['date'])),
         did: jsonSession['did'],
         time: moment.duration(jsonSession['time'], 'seconds')
-      }))
+      })) : undefined
     };
   }
 }
