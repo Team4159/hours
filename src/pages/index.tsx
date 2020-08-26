@@ -388,11 +388,14 @@ const OtherUsersTable: React.FC<FlexProps> = props => {
   return useObserver(() => (
     <Flex direction='column' {...props}>
       <Flex direction='row' backgroundColor='gray.300' fontWeight='bold'>
-        <Text flexBasis='50%' paddingX={6} paddingY={3}>
+        <Text flexBasis='33%' paddingX={6} paddingY={3}>
           Name
         </Text>
-        <Text flexBasis='50%' paddingX={6} paddingY={3}>
+        <Text flexBasis='33%' paddingX={6} paddingY={3}>
           Time In
+        </Text>
+        <Text flexBasis='33%' paddingX={6} paddingY={3}>
+          Total Time
         </Text>
       </Flex>
       {
@@ -401,16 +404,19 @@ const OtherUsersTable: React.FC<FlexProps> = props => {
           .sort((a, b) => a.lastTime.diff(b.lastTime))
           .map((user, idx) => (
             <Flex key={idx} direction='row' backgroundColor={idx % 2 == 0 ? 'gray.100' : 'white'}>
-              <Text flexBasis='50%' paddingX={6} paddingY={2}>
+              <Text flexBasis='33%' paddingX={6} paddingY={2}>
                 {user.name}
               </Text>
-              <Text flexBasis='50%' paddingX={6} paddingY={3}>
+              <Text flexBasis='33%' paddingX={6} paddingY={3}>
                 {
                   moment.duration(timeStore.currentTime.diff(user.lastTime)).format('hh:mm:ss', {
                     minValue: 0,
                     trim: false
                   })
                 }
+              </Text>
+              <Text flexBasis='33%' paddingX={6} paddingY={3}>
+                {user.totalTime.format('hh:mm:ss', { trim: false })}
               </Text>
             </Flex>
           ))
