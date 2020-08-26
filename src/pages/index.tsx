@@ -345,9 +345,9 @@ const SessionTableRow: React.FC<FlexProps & { session: Session }> = ({ session, 
         {session.date.clone().subtract(session.time).format('LT')} - {session.date.format('LT')}
       </Text>
       <Text flexBasis='70%' paddingX={6} paddingY={2}>
-        {session.did.length > 500 ? (
+        {session.did.length > 250 ? (
           <Fragment>
-            {!isExpanded ? session.did.slice(0, 500).concat('...') : session.did}
+            {!isExpanded ? session.did.slice(0, 250).concat('...') : session.did}
             <Text cursor='pointer' color='cardinalbotics.red.400' onClick={() => setExpanded(!isExpanded)}>
               {isExpanded ? 'Collpase' : 'Expand'}
             </Text>
