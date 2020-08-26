@@ -359,7 +359,7 @@ const SessionsTable: React.FC<FlexProps> = props => {
 
   return useObserver(() => (
     <Flex direction='column' {...props}>
-      <Flex roundedTop='lg' direction='row' backgroundColor='gray.300' fontWeight='bold'>
+      <Flex direction='row' backgroundColor='gray.300' fontWeight='bold'>
         <Text flexBasis='10%' paddingX={6} paddingY={3}>
           Date
         </Text>
@@ -387,7 +387,7 @@ const OtherUsersTable: React.FC<FlexProps> = props => {
 
   return useObserver(() => (
     <Flex direction='column' {...props}>
-      <Flex roundedTop='lg' direction='row' backgroundColor='gray.300' fontWeight='bold'>
+      <Flex direction='row' backgroundColor='gray.300' fontWeight='bold'>
         <Text flexBasis='50%' paddingX={6} paddingY={3}>
           Name
         </Text>
