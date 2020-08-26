@@ -225,17 +225,20 @@ const Account: React.FC<StackProps> = observer(props => {
             <IconButton
               size='xs'
               variant='outline'
+              isDisabled={isChangingPassword && newPassword == ''}
               variantColor='cardinalbotics.red'
               aria-label={isChangingPassword ? 'Check' : 'Edit'}
               icon={isChangingPassword ? 'check' : 'edit'}
               onClick={() => {
                 if (isChangingPassword) {
-                  toast({
-                    title: 'Password changed.',
-                    description: 'You\'ve successfully changed your password.',
-                    status: 'success',
-                    duration: 2500
-                  });
+                  userStore
+                    .changePassword(newPassword)
+                    .then(() => toast({
+                      title: 'Password changed.',
+                      description: 'You\'ve successfully changed your password.',
+                      status: 'success',
+                      duration: 2500
+                    }));
                 }
                 setChangingPassword(!isChangingPassword);
               }}

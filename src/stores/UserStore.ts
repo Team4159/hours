@@ -66,6 +66,22 @@ export default class UserStore {
       });
   }
 
+  @action
+  changePassword(newPassword: string): Promise<User> {
+    return fetch('/api/src/endpoints/changepassword.php?' + new URLSearchParams({
+      password: this.password,
+      newpassword: newPassword
+    }))
+      .then(async res => {
+        if (res.status == 404) {
+          throw new Error(await res.text());
+        }
+        this.password = newPassword;
+        return res;
+      })
+      .then(() => this.fetchUserData());
+  }
+
   signIn(): Promise<User> {
     return fetch('/api/src/endpoints/signin.php?' + new URLSearchParams({
       password: this.password
