@@ -350,7 +350,7 @@ const SessionTableRow: React.FC<FlexProps & { session: Session }> = ({ session, 
       <Text flexBasis='20%' paddingX={6} paddingY={3}>
         {session.date.clone().subtract(session.time).format('LT')} - {session.date.format('LT')}
       </Text>
-      <Text flexBasis='70%' wordBreak='break-word' paddingX={6} paddingY={2}>
+      <Text flexBasis='70%' wordBreak='break-all' paddingX={6} paddingY={2}>
         {session.did.length > 250 ? (
           <Fragment>
             {!isExpanded ? session.did.slice(0, 250).concat('...') : session.did}
