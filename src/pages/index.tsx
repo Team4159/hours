@@ -238,7 +238,14 @@ const Account: React.FC<StackProps> = observer(props => {
                       description: 'You\'ve successfully changed your password.',
                       status: 'success',
                       duration: 2500
-                    }));
+                    }))
+                    .catch(err => toast({
+                      title: 'An error occurred.',
+                      description: err.toString(),
+                      status: 'error',
+                      duration: 2500
+                    }))
+                    .finally(() => setNewPassword(''));
                 }
                 setChangingPassword(!isChangingPassword);
               }}
