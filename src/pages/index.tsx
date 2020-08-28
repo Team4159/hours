@@ -29,7 +29,8 @@ import {
   TabPanel,
   Text,
   Textarea,
-  useToast
+  useToast,
+  PseudoBox
 } from '@chakra-ui/core';
 
 import { action } from 'mobx';
@@ -146,7 +147,7 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
               onChange={e => setWriteUp(e.target.value)}
               ref={ref => textAreaRef.current = ref}
             />
-            { modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text> }
+            {modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text>}
             <Button
               variant='solid'
               variantColor='cardinalbotics.red'
@@ -219,7 +220,13 @@ const Account: React.FC<StackProps> = observer(props => {
               />
             ): (
               <StatNumber>
-                {userStore.userData.password}
+                <PseudoBox
+                  backgroundColor='black'
+                  cursor='pointer'
+                  _hover={{backgroundColor: 'transparent'}}
+                >
+                  {userStore.userData.password}
+                </PseudoBox>
               </StatNumber>
             )}
             <IconButton
@@ -306,7 +313,7 @@ const Account: React.FC<StackProps> = observer(props => {
         >
           {isLoading ? 'Loading...' : (userStore.userData.signedIn ? 'Sign Out' : 'Sign In')}
         </Button>
-        { !userStore.userData.signedIn && (
+        {!userStore.userData.signedIn && (
           <Button
             variant='solid'
             variantColor='cardinalbotics.red'
@@ -324,7 +331,7 @@ const Account: React.FC<StackProps> = observer(props => {
           >
             Forget Password
           </Button>
-        ) }
+        )}
       </Stack>
       <SignOutModal
         isOpen={isModalOpen}

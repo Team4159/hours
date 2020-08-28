@@ -30,7 +30,6 @@ export default class UserStore {
     });
 
     this.fetchOtherUserData();
-
     setInterval(this.fetchOtherUserData, 5000);
   }
 
@@ -41,6 +40,11 @@ export default class UserStore {
       .then(json => {
         const otherUsers = json.map(UserStore.hydrateData);
         this.otherUserData.replace(otherUsers);
+        if (this.userData) {
+          if (this.otherUserData.find(user => user.name == this.userData.name).signedIn != this.userData.signedIn) {
+            this.fetchUserData();
+          } 
+        }
         return otherUsers;
       });
   }
