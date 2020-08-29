@@ -9,6 +9,7 @@ import {
   IconButton,
   Image,
   Input,
+  Link,
   Modal,
   IModal,
   ModalBody,
@@ -44,7 +45,7 @@ import 'moment-duration-format';
 
 import Session from '@/models/Session';
 
-const HELP_TEXT = 'If this error was unexpected, contact Kai or Ling on Slack.';
+const HELP_TEXT = 'If this error was unexpected, fill out our feedback form.';
 
 const Onboarding = () => {
   const userStore = useContext(UserContext);
@@ -86,10 +87,15 @@ const Onboarding = () => {
       }}
       alignItems='start'
     >
+      <Heading fontSize='4xl' color='cardinalbotics.red.400' alignSelf='center'>
+        Team 4159 Hour Tracker
+      </Heading>
       <Box width='100%'>
         <Input
           isFullWidth
           variant='filled'
+          borderColor='cardinalbotics.red.400'
+          backgroundColor='gray.100'
           placeholder='Password'
           value={password}
           onChange={e => setPassword(e.target.value)}
@@ -451,7 +457,7 @@ const HomePage = () => {
   const userStore = useContext(UserContext);
 
   return useObserver(() => (
-    <Stack minHeight='100%' alignItems='center' spacing={5} backgroundColor='gray.200'>
+    <Stack minHeight='100%' alignItems='center' spacing={5} backgroundColor='gray.100'>
       <Flex
         direction='row'
         alignSelf='stretch'
@@ -461,11 +467,18 @@ const HomePage = () => {
       >
         <Image src='/logo.png'/>
       </Flex>
-      <Box flexGrow={1}/>
-      {!userStore.userData && <Heading fontSize='4xl' color='cardinalbotics.red.400'>Hour Tracker</Heading>}
-      <Stack alignItems='start' width={!userStore.userData ? ['80%', '65%', '50%'] : ['90%', '80%']}>
+      <Stack alignItems='start' width={!userStore.userData ? ['80%', '65%', '50%'] : ['90%', '80%']} flexGrow={1} spacing={4}>
+        <Box flexGrow={1}/>
+        <Box rounded='lg' padding={4} backgroundColor='white' alignSelf='stretch'>
+          <Link href='https://forms.gle/XM7bCFJi5sBdQkkRA'>
+            <Text fontSize='xl' textAlign='center' color='cardinalbotics.red.400' fontWeight='bold'>
+              Feedback / Bug Reporting Google Form
+            </Text>
+          </Link>
+        </Box>
+        <Box flexGrow={2}/>
         {!userStore.userData ? <Onboarding/> : (
-          <Stack width='100%' spacing={10}>
+          <Stack width='100%' spacing={4}>
             <Account/>
             <Tabs size='lg' variantColor='cardinalbotics.red' borderBottomColor='gray.300'>
               <TabList>
@@ -483,8 +496,8 @@ const HomePage = () => {
             </Tabs>
           </Stack>
         )}
+        <Box flexGrow={16}/>
       </Stack>
-      <Box flexGrow={6}/>
     </Stack>
   ));
 }
