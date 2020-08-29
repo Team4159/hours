@@ -116,7 +116,8 @@ export default class UserStore {
       sessions: json['sessions'] ? json['sessions'].map(jsonSession => ({
         date: moment.unix(parseInt(jsonSession['date'])),
         did: jsonSession['did'],
-        time: moment.duration(jsonSession['time'], 'seconds')
+        time: moment.duration(jsonSession['time'], 'seconds'),
+        flagged: jsonSession['flagged']
       })) : undefined
     };
   }

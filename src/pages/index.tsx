@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useEffect, useState, useRef } from 'react';
+import React, { Fragment, useContext, useState, useRef } from 'react';
 
 import {
   Box,
@@ -16,6 +16,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  PseudoBox,
   Stack,
   StackProps,
   Stat,
@@ -29,8 +30,7 @@ import {
   TabPanel,
   Text,
   Textarea,
-  useToast,
-  PseudoBox
+  useToast
 } from '@chakra-ui/core';
 
 import { action } from 'mobx';
@@ -223,7 +223,7 @@ const Account: React.FC<StackProps> = observer(props => {
                 <PseudoBox
                   backgroundColor='black'
                   cursor='pointer'
-                  _hover={{backgroundColor: 'transparent'}}
+                  _hover={{ backgroundColor: 'transparent' }}
                 >
                   {userStore.userData.password}
                 </PseudoBox>
@@ -366,6 +366,11 @@ const SessionTableRow: React.FC<FlexProps & { session: Session }> = ({ session, 
             </Text>
           </Fragment>
         ) : session.did}
+        {session.flagged && (
+          <Text display='inline' color='red.700' marginLeft={1}>
+            (This session has been flagged automatically or by an administrator)
+          </Text>
+        )}
       </Text>
     </Flex>
   )
@@ -391,7 +396,7 @@ const SessionsTable: React.FC<FlexProps> = props => {
         <SessionTableRow
           key={idx}
           session={session}
-          backgroundColor={idx % 2 == 0 ? 'gray.100' : 'white'}
+          backgroundColor={session.flagged ? 'red.300' : idx % 2 == 0 ? 'gray.100' : 'white'}
         />
       ))}
     </Flex>
