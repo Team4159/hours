@@ -30,7 +30,6 @@ export default class UserStore {
     });
 
     this.fetchOtherUserData();
-    setInterval(this.fetchOtherUserData, 10000);
   }
 
   @action.bound
@@ -43,7 +42,7 @@ export default class UserStore {
         if (this.userData) {
           if (this.otherUserData.find(user => user.name == this.userData.name).signedIn != this.userData.signedIn) {
             this.fetchUserData();
-          } 
+          }
         }
         return otherUsers;
       });
