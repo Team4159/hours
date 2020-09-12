@@ -335,7 +335,7 @@ const Account: React.FC<StackProps> = observer(props => {
               });
             })}
           >
-            Forget Password
+            Forget Me
           </Button>
         )}
       </Stack>
@@ -455,6 +455,7 @@ const OtherUsersTable: React.FC<FlexProps> = props => {
 
 const HomePage = () => {
   const userStore = useContext(UserContext);
+  const interval = useRef(null);
 
   return useObserver(() => (
     <Stack minHeight='100%' alignItems='center' spacing={5} backgroundColor='gray.100'>
@@ -480,7 +481,20 @@ const HomePage = () => {
         {!userStore.userData ? <Onboarding/> : (
           <Stack width='100%' spacing={4}>
             <Account/>
-            <Tabs size='lg' variantColor='cardinalbotics.red' borderBottomColor='gray.300'>
+            <Tabs
+              size='lg'
+              variantColor='cardinalbotics.red'
+              borderBottomColor='gray.300'
+              onChange={index => {
+                if (index == 0) {
+                  if (interval.current) {
+                    clearInterval(interval.current);
+                  }
+                } else {
+                  interval.current = setInterval(userStore.fetchOtherUserData, 10000);
+                }
+              }}
+            >
               <TabList>
                 <Tab marginRight={3}>Your Past Sessions</Tab>
                 <Tab>Other Active Members</Tab>
