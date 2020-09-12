@@ -30,6 +30,7 @@ export default class UserStore {
     });
 
     this.fetchOtherUserData();
+    setInterval(this.fetchOtherUserData, 1000);
   }
 
   @action.bound
