@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 
 import { Button, Flex, Heading, Icon, Stack, Text, useToast } from '@chakra-ui/core';
 
-import { getUsers, unflagSession } from '@/utils/dynamodb';
+import { getUsers } from '@/utils/dynamodb';
 import UserStore from '@/stores/UserStore';
 
 import moment from 'moment';
@@ -90,7 +90,10 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                   variantColor='green'
                   onClick={() =>
                     fetch(`/api/unflagSession?password=${session.user.password}&sessionEnd=${session.date.unix()}`)
-                      .then(() => {
+                      .then(async res => {
+                        if (res.status == 400) {
+                          throw new Error(await res.text());
+                        }
                         toast({
                           title: 'Unflagged Session.',
                           description: 'You\'ve successfully unflagged the session.',
@@ -101,6 +104,14 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                       })
                       .then(res => res.json())
                       .then(newUsers => setRawUsers(newUsers))
+                      .catch(err => {
+                        toast({
+                          title: 'Failed to Unflag Session.',
+                          description: err.toString(),
+                          status: 'error',
+                          duration: 2500
+                        });
+                      })
                   }
                 >
                   Unflag
@@ -110,7 +121,10 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                   variantColor='red'
                   onClick={() =>
                     fetch(`/api/flagSession?password=${session.user.password}&sessionEnd=${session.date.unix()}`)
-                      .then(() => {
+                      .then(async res => {
+                        if (res.status == 400) {
+                          throw new Error(await res.text());
+                        }
                         toast({
                           title: 'Flagged Session.',
                           description: 'You\'ve successfully flagged the session.',
@@ -121,6 +135,14 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                       })
                       .then(res => res.json())
                       .then(newUsers => setRawUsers(newUsers))
+                      .catch(err => {
+                        toast({
+                          title: 'Failed to Flag Session.',
+                          description: err.toString(),
+                          status: 'error',
+                          duration: 2500
+                        });
+                      })
                   }
                 >
                   Flag
