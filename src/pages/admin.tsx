@@ -21,6 +21,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
   const hydratedUsers = useMemo<User[]>(() => rawUsers.map(UserStore.hydrateData), [rawUsers]);
   const sessions = useMemo<SessionWithUser[]>(() => hydratedUsers.reduce((sessions, user) => {
     return sessions.concat(user.sessions.map(session => {
+      // @ts-ignore
       session.user = user;
       return session;
     }));

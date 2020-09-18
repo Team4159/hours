@@ -5,6 +5,11 @@ let cachedClient: AWS.DynamoDB.DocumentClient = null;
 const TableName = 'Hours';
 
 const connectToDatabase = (): AWS.DynamoDB.DocumentClient => {
+  AWS.config.credentials = new AWS.Credentials({
+    accessKeyId: process.env['ACCESS_KEY_ID'],
+    secretAccessKey: process.env['SECRET_ACCESS_KEY']
+  });
+
   if (cachedClient) {
     return cachedClient;
   }
