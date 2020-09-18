@@ -1,8 +1,140 @@
-import React from 'react';
-import { getUsers } from '../utils/dynamodb';
+import React, { useMemo, useState } from 'react';
 
-const AdminPage = (props) => {
-  return JSON.stringify(props);
+import { Button, Flex, Heading, Icon, Stack, Text, useToast } from '@chakra-ui/core';
+
+import { getUsers, unflagSession } from '@/utils/dynamodb';
+import UserStore from '@/stores/UserStore';
+
+import moment from 'moment';
+import 'moment-duration-format';
+
+import User from '@/models/User';
+import Session from '@/models/Session';
+
+type SessionWithUser = Session & { user: User };
+
+const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => {
+  const [selectedDate, setSelectedDate] = useState(moment());
+  const selectedToday = selectedDate.isSame(moment(), 'day');
+
+  const [rawUsers, setRawUsers] = useState<{ [key: string]: any }[]>(users);
+  const hydratedUsers = useMemo<User[]>(() => rawUsers.map(UserStore.hydrateData), [rawUsers]);
+  const sessions = useMemo<SessionWithUser[]>(() => hydratedUsers.reduce((sessions, user) => {
+    return sessions.concat(user.sessions.map(session => {
+      session.user = user;
+      return session;
+    }));
+  }, []), [hydratedUsers]);
+  const selectedSessions = useMemo<SessionWithUser[]>(() =>
+    sessions.filter(session => session.date.clone().subtract(session.time).isSame(selectedDate, 'day')),
+  [sessions, selectedDate]);
+
+  const toast = useToast();
+
+  return (
+    <Flex direction='column'>
+      <Stack direction='row' alignItems='center' justifyContent='center' paddingY={6}>
+        <Icon
+          size='36px'
+          name='chevron-left'
+          cursor={selectedToday ? 'default' : 'pointer'}
+          color={selectedToday ? 'gray.200' : 'black'}
+          onClick={() => !selectedToday && setSelectedDate(selectedDate.clone().add(1, 'day'))}
+        />
+        <Heading fontSize='2xl'>{selectedDate.format('MMMM Do YYYY')}</Heading>
+        <Icon
+          size='36px'
+          name='chevron-right'
+          cursor='pointer'
+          onClick={() => setSelectedDate(selectedDate.clone().subtract(1, 'day'))}
+        />
+      </Stack>
+      <Flex direction='row' backgroundColor='gray.300' fontWeight='bold'>
+        <Text flexBasis='20%' paddingX={6} paddingY={3}>
+          Name
+        </Text>
+        <Text flexBasis='40%' paddingX={6} paddingY={3}>
+          Did
+        </Text>
+        <Text flexBasis='10%' paddingX={6} paddingY={3}>
+          Start
+        </Text>
+        <Text flexBasis='10%' paddingX={6} paddingY={3}>
+          Length
+        </Text>
+        <Text flexBasis='20%' paddingX={6} paddingY={3}>
+          Action
+        </Text>
+      </Flex>
+      {
+        selectedSessions.map((session, idx) => (
+          <Flex key={idx} direction='row' backgroundColor={session.flagged ? 'red.300' : idx % 2 == 0 ? 'gray.100' : 'white'}>
+            <Text flexBasis='20%' paddingX={6} paddingY={3}>
+              {session.user.name}
+            </Text>
+            <Text flexBasis='40%' paddingX={6} paddingY={3}>
+              {session.did}
+            </Text>
+            <Text flexBasis='10%' paddingX={6} paddingY={3}>
+              {session.date.clone().subtract(session.time).format('LT')}
+            </Text>
+            <Text flexBasis='10%' paddingX={6} paddingY={3}>
+              {session.time.format('hh:mm:ss', {
+                minValue: 0,
+                trim: false
+              })}
+            </Text>
+            <Stack isInline flexBasis='20%' paddingX={6} paddingY={3}>
+              {session.flagged ? (
+                <Button
+                  variantColor='green'
+                  onClick={() =>
+                    fetch(`/api/unflagSession?password=${session.user.password}&sessionEnd=${session.date.unix()}`)
+                      .then(() => {
+                        toast({
+                          title: 'Unflagged Session.',
+                          description: 'You\'ve successfully unflagged the session.',
+                          status: 'success',
+                          duration: 2500
+                        });
+                        return fetch('/api/getUsers');
+                      })
+                      .then(res => res.json())
+                      .then(newUsers => setRawUsers(newUsers))
+                  }
+                >
+                  Unflag
+                </Button>
+              ) : (
+                <Button
+                  variantColor='red'
+                  onClick={() =>
+                    fetch(`/api/flagSession?password=${session.user.password}&sessionEnd=${session.date.unix()}`)
+                      .then(() => {
+                        toast({
+                          title: 'Flagged Session.',
+                          description: 'You\'ve successfully flagged the session.',
+                          status: 'success',
+                          duration: 2500
+                        });
+                        return fetch('/api/getUsers');
+                      })
+                      .then(res => res.json())
+                      .then(newUsers => setRawUsers(newUsers))
+                  }
+                >
+                  Flag
+                </Button>
+              )}
+              <Button variantColor='yellow'>
+                Edit Time
+              </Button>
+            </Stack>
+          </Flex>
+        )) 
+      }
+    </Flex>
+  );
 };
 
 export default AdminPage;

@@ -36,8 +36,8 @@ import {
 
 import { action } from 'mobx';
 import { useObserver, observer } from 'mobx-react';
-import { UserContext } from '@/stores/UserStore';
-import { TimeContext } from '@/stores/TimeStore';
+import UserStore, { UserContext } from '@/stores/UserStore';
+import TimeStore, { TimeContext } from '@/stores/TimeStore';
 
 import moment from 'moment';
 import 'moment-timezone';
@@ -453,7 +453,7 @@ const OtherUsersTable: React.FC<FlexProps> = props => {
   ));
 }
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const userStore = useContext(UserContext);
 
   return useObserver(() => (
@@ -506,4 +506,12 @@ const HomePage = () => {
   ));
 }
 
-export default HomePage;
+const HomePageWithContext: React.FC = (props) => (
+  <UserContext.Provider value={new UserStore()}>
+    <TimeContext.Provider value={new TimeStore()}>
+      <HomePage {...props}/>
+    </TimeContext.Provider>
+  </UserContext.Provider>
+)
+
+export default HomePageWithContext;
