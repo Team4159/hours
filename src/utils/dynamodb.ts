@@ -25,6 +25,38 @@ const connectToDatabase = (): AWS.DynamoDB.DocumentClient => {
   return client;
 };
 
+const getUserByPassword = async (password: string) => {
+  const { Items } = await connectToDatabase()
+    .scan({
+      TableName,
+      FilterExpression: 'password = :password',
+      ExpressionAttributeValues: {
+        ':password': password
+      }
+    })
+    .promise();
+  
+  return Items[0];
+}
+
+const updateSessions = async (password: string, sessions: any) => {
+  await connectToDatabase()
+    .update({
+      TableName,
+      Key: {
+        password
+      },
+      UpdateExpression: 'set sessions=:sessions, totalTime=:totalTime',
+      ExpressionAttributeValues:{
+        ':totalTime': sessions
+          .filter(session => !session.flagged)
+          .reduce((sum, session) => sum += session.time, 0),
+        ':sessions': sessions
+      }
+    })
+    .promise();
+}
+
 export const getUsers = async () => {
   const { Items } = await connectToDatabase()
     .scan({
@@ -35,37 +67,15 @@ export const getUsers = async () => {
   return Items;
 }
 
-export const flagSession = async (password, sessionEnd) => {
-  const { Items } = await connectToDatabase()
-    .scan({
-      TableName,
-      FilterExpression: 'password = :password',
-      ExpressionAttributeValues: {
-        ':password': password
-      }
-    })
-    .promise();
-  
-  const user = Items[0];
+export const flagSession = async (password: string, sessionEnd: string) => {
+  const user = await getUserByPassword(password);
+
   if (user) {
     const sessions = user.sessions;
-    const sessionIdx = sessions.findIndex(session => session.date == parseInt(sessionEnd));
-    const session = sessions[sessionIdx];
+    const session = sessions.find(session => session.date == parseInt(sessionEnd));
     if (session && !session.flagged) {
       session.flagged = true;
-      await connectToDatabase()
-        .update({
-          TableName,
-          Key: {
-            password: user.password,
-          },
-          UpdateExpression: 'set sessions=:sessions, totalTime=:totalTime',
-          ExpressionAttributeValues:{
-            ':totalTime': user.totalTime - session.time,
-            ':sessions': sessions.slice(0, sessionIdx).concat([session]).concat(sessions.slice(sessionIdx + 1, sessions.length))
-          }
-        })
-        .promise();
+      await updateSessions(password, sessions);
     } else {
       throw new Error('Session not found');
     }
@@ -75,36 +85,14 @@ export const flagSession = async (password, sessionEnd) => {
 }
 
 export const unflagSession = async (password, sessionEnd) => {
-  const { Items } = await connectToDatabase()
-    .scan({
-      TableName,
-      FilterExpression: 'password = :password',
-      ExpressionAttributeValues: {
-        ':password': password
-      }
-    })
-    .promise();
-  
-  const user = Items[0];
+  const user = await getUserByPassword(password);
+
   if (user) {
     const sessions = user.sessions;
-    const sessionIdx = sessions.findIndex(session => session.date == parseInt(sessionEnd));
-    const session = sessions[sessionIdx];
+    const session = sessions.find(session => session.date == parseInt(sessionEnd));
     if (session && session.flagged) {
       session.flagged = false;
-      await connectToDatabase()
-        .update({
-          TableName,
-          Key: {
-            password: user.password,
-          },
-          UpdateExpression: 'set sessions=:sessions, totalTime=:totalTime',
-          ExpressionAttributeValues:{
-            ':totalTime': user.totalTime + session.time,
-            ':sessions': sessions.slice(0, sessionIdx).concat([session]).concat(sessions.slice(sessionIdx + 1, sessions.length))
-          }
-        })
-        .promise();
+      await updateSessions(password, sessions);
     } else {
       throw new Error('Session not found');
     }
