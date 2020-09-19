@@ -17,8 +17,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
   const [selectedDate, setSelectedDate] = useState(moment());
   const selectedToday = selectedDate.isSame(moment(), 'day');
 
-  const [rawUsers, setRawUsers] = useState<{ [key: string]: any }[]>(users);
-  const hydratedUsers = useMemo<User[]>(() => rawUsers.map(UserStore.hydrateData), [rawUsers]);
+  const [hydratedUsers, setHydratedUsers] = useState<User[]>(() => users.map(UserStore.hydrateData));
   const sessions = useMemo<SessionWithUser[]>(() => hydratedUsers.reduce((sessions, user) => {
     return sessions.concat(user.sessions.map(session => {
       // @ts-ignore
@@ -31,6 +30,26 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
   [sessions, selectedDate]);
 
   const toast = useToast();
+
+  const updateUserSessions = (user: User, session: SessionWithUser, update: Partial<Session>) => {
+    const userIdx = hydratedUsers.findIndex(user_ => user_ == user);
+    const sessionIdx = user.sessions.findIndex(session_ => session_ == session);
+    setHydratedUsers([
+      ...hydratedUsers.slice(0, userIdx),
+      {
+        ...user,
+        sessions: [
+          ...user.sessions.slice(0, sessionIdx),
+          {
+            ...session,
+            ...update
+          },
+          ...user.sessions.slice(sessionIdx + 1, user.sessions.length)
+        ]
+      },
+      ...hydratedUsers.slice(userIdx + 1, hydratedUsers.length),
+    ]);
+  };
 
   return (
     <Flex direction='column'>
@@ -69,7 +88,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
       </Flex>
       {
         selectedSessions.map((session, idx) => (
-          <Flex key={idx} direction='row' backgroundColor={session.flagged ? 'red.300' : idx % 2 == 0 ? 'gray.100' : 'white'}>
+          <Flex key={session.date.unix()} direction='row' backgroundColor={session.flagged ? 'red.300' : idx % 2 == 0 ? 'gray.100' : 'white'}>
             <Text flexBasis='20%' paddingX={6} paddingY={3}>
               {session.user.name}
             </Text>
@@ -89,7 +108,10 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
               {session.flagged ? (
                 <Button
                   variantColor='green'
-                  onClick={() =>
+                  onClick={() => {
+                    updateUserSessions(session.user, session, {
+                      flagged: false
+                    });
                     fetch(`/api/unflagSession?password=${session.user.password}&sessionEnd=${session.date.unix()}`)
                       .then(async res => {
                         if (res.status == 400) {
@@ -101,10 +123,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                           status: 'success',
                           duration: 2500
                         });
-                        return fetch('/api/getUsers');
                       })
-                      .then(res => res.json())
-                      .then(newUsers => setRawUsers(newUsers))
                       .catch(err => {
                         toast({
                           title: 'Failed to Unflag Session.',
@@ -112,15 +131,18 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                           status: 'error',
                           duration: 2500
                         });
-                      })
-                  }
+                      });
+                  } }
                 >
                   Unflag
                 </Button>
               ) : (
                 <Button
                   variantColor='red'
-                  onClick={() =>
+                  onClick={() => {
+                    updateUserSessions(session.user, session, {
+                      flagged: true
+                    });
                     fetch(`/api/flagSession?password=${session.user.password}&sessionEnd=${session.date.unix()}`)
                       .then(async res => {
                         if (res.status == 400) {
@@ -132,10 +154,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                           status: 'success',
                           duration: 2500
                         });
-                        return fetch('/api/getUsers');
                       })
-                      .then(res => res.json())
-                      .then(newUsers => setRawUsers(newUsers))
                       .catch(err => {
                         toast({
                           title: 'Failed to Flag Session.',
@@ -143,8 +162,8 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
                           status: 'error',
                           duration: 2500
                         });
-                      })
-                  }
+                      });
+                  }}
                 >
                   Flag
                 </Button>
