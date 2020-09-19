@@ -24,7 +24,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
       session.user = user;
       return session;
     }));
-  }, []), [hydratedUsers]);
+  }, []).sort((a, b) => a.date.clone().subtract(a.time).diff(b.date.clone().subtract(b.time))), [hydratedUsers]);
   const selectedSessions = useMemo<SessionWithUser[]>(() =>
     sessions.filter(session => session.date.clone().subtract(session.time).isSame(selectedDate, 'day')),
   [sessions, selectedDate]);
