@@ -30,7 +30,9 @@ export default class UserStore {
     });
 
     this.fetchOtherUserData();
-    setInterval(this.fetchOtherUserData, 1000);
+    if (process.env.NODE_ENV == 'production') {
+      setInterval(this.fetchOtherUserData, 1000);
+    }
   }
 
   @action.bound
@@ -93,10 +95,11 @@ export default class UserStore {
       .then(() => this.fetchUserData());
   }
 
-  signOut(did: string): Promise<User> {
+  signOut(did: string, sessionTime: number = null): Promise<User> {
     return fetch('/api/src/endpoints/signout.php?' + new URLSearchParams({
       password: this.password,
-      did
+      did,
+      sessionTime: String(sessionTime)
     }))
       .then(() => this.fetchUserData());
   }

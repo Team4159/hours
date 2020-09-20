@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useState, useRef } from 'react';
+import React, { Fragment, useContext, useState, useRef, useEffect } from 'react';
 
 import {
   Box,
@@ -125,7 +125,18 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
 
   const [isModalLoading, setModalLoading] = useState(false);
   const [writeUp, setWriteUp] = useState('');
+  const [correctedHours, setCorrectedHours] = useState('');
+  const [correctedMinutes, setCorrectedMinutes] = useState('');
   const [modalErrorMessage, setModalErrorMessage] = useState('');
+  useEffect(() => {
+    if (correctedMinutes != '' && isNaN(+correctedMinutes)) {
+      setModalErrorMessage('Corrected minutes is not a number');
+    } else if (correctedHours != '' && isNaN(+correctedHours)) {
+      setModalErrorMessage('Corrected hours is not a number');
+    } else {
+      setModalErrorMessage('');
+    }
+  }, [correctedMinutes, correctedHours]);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -153,15 +164,45 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
               onChange={e => setWriteUp(e.target.value)}
               ref={ref => textAreaRef.current = ref}
             />
+            <Stack backgroundColor='yellow.400' rounded='md' padding={4}>
+              <Text fontWeight='bold'>
+                Fill this out if you forgot to sign out when you stopped working
+              </Text>
+              <Stack isInline>
+                <Box>
+                  <Input
+                    placeholder='Correct Hours'
+                    value={correctedHours}
+                    onChange={e => setCorrectedHours(e.target.value)}
+                  />
+                </Box>
+                <Box>
+                  <Input
+                    placeholder='Correct Minutes'
+                    value={correctedMinutes}
+                    onChange={e => setCorrectedMinutes(e.target.value)}
+                  />
+                </Box>
+              </Stack>
+            </Stack>
             {modalErrorMessage && <Text color='red.400'>{modalErrorMessage}</Text>}
             <Button
               variant='solid'
               variantColor='cardinalbotics.red'
-              isDisabled={!writeUp || isModalLoading}
+              isDisabled={
+                (!writeUp ||
+                 (correctedMinutes != '' && isNaN(+correctedMinutes)) ||
+                 (correctedHours != '' && isNaN(+correctedHours))
+                ) || isModalLoading
+              }
               onClick={() => {
                 setModalErrorMessage('');
                 setModalLoading(true);
-                userStore.signOut(writeUp)
+                userStore.signOut(writeUp, (
+                  (correctedMinutes != '' || correctedHours != '') ?
+                    ((+correctedHours * 60 + +correctedMinutes) * 60) :
+                    null
+                ))
                   .then(() => {
                     setWriteUp('');
                     onClose(null);
