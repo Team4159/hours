@@ -88,7 +88,7 @@ const AdminPage: React.FC<{ users: { [key: string]: any }[] }> = ({ users }) => 
       </Flex>
       {
         selectedSessions.map((session, idx) => (
-          <Flex key={session.date.unix()} direction='row' backgroundColor={session.flagged ? 'red.300' : idx % 2 == 0 ? 'gray.100' : 'white'}>
+          <Flex key={idx} direction='row' backgroundColor={session.flagged ? 'red.300' : idx % 2 == 0 ? 'gray.100' : 'white'}>
             <Text flexBasis='20%' paddingX={6} paddingY={3}>
               {session.user.name}
             </Text>
