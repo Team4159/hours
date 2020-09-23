@@ -100,3 +100,26 @@ export const unflagSession = async (password, sessionEnd) => {
     throw new Error('User not found');
   }
 }
+
+export const changeSessionTime = async (password, sessionEnd, sessionTime) => {
+  if (isNaN(+sessionTime)) {
+    throw new Error('Session time is invalid');
+  }
+
+  const user = await getUserByPassword(password);
+
+  if (user) {
+    const sessions = user.sessions;
+    const session = sessions.find(session => session.date == sessionEnd);
+    if (session) {
+      session.date -= session.time;
+      session.time = +sessionTime;
+      session.date += session.time;
+      await updateSessions(password, sessions);
+    } else {
+      throw new Error('Session not found');
+    }
+  } else {
+    throw new Error('User not found');
+  }
+}

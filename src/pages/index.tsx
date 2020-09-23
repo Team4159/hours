@@ -7,7 +7,6 @@ import {
   FlexProps,
   Heading,
   IconButton,
-  Image,
   Input,
   Link,
   Modal,
