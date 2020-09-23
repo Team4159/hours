@@ -134,7 +134,7 @@ const SessionRow: React.FC<FlexProps & { session: SessionWithUser }> = ({ sessio
         {editable ? (
           <Button
             variantColor='green'
-            isDisabled={isNaN(+correctedHours) || isNaN(+correctedMinutes) || correctedHours == '' || correctedMinutes == ''}
+            isDisabled={isNaN(+correctedHours) || isNaN(+correctedMinutes)}
             onClick={action(() => {
               setEditable(false);
               const originalSessionEnd = session.date.unix();
