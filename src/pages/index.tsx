@@ -127,15 +127,18 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
   const [correctedHours, setCorrectedHours] = useState('');
   const [correctedMinutes, setCorrectedMinutes] = useState('');
   const [modalErrorMessage, setModalErrorMessage] = useState('');
+
   useEffect(() => {
-    if (correctedMinutes != '' && isNaN(+correctedMinutes)) {
-      setModalErrorMessage('Corrected minutes is not a number');
-    } else if (correctedHours != '' && isNaN(+correctedHours)) {
-      setModalErrorMessage('Corrected hours is not a number');
+    if ((correctedMinutes != '' && isNaN(+correctedMinutes)) || +correctedMinutes < 0) {
+      setModalErrorMessage('Corrected minutes is not a positive number');
+    } else if ((correctedHours != '' && isNaN(+correctedHours)) || +correctedHours < 0) {
+      setModalErrorMessage('Corrected hours is not a positive number');
+    } else if ((correctedMinutes != '' || correctedHours != '') && +correctedMinutes == 0 && +correctedHours == 0) {
+      setModalErrorMessage('You must enter a non-zero time');
     } else {
       setModalErrorMessage('');
     }
-  }, [correctedMinutes, correctedHours]);
+  }, [writeUp, correctedMinutes, correctedHours]);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -189,10 +192,7 @@ const SignOutModal: React.FC<Omit<IModal, 'children'>> = ({ onClose, ...props })
               variant='solid'
               variantColor='cardinalbotics.red'
               isDisabled={
-                (!writeUp ||
-                 (correctedMinutes != '' && isNaN(+correctedMinutes)) ||
-                 (correctedHours != '' && isNaN(+correctedHours))
-                ) || isModalLoading
+                !writeUp || !!modalErrorMessage || isModalLoading
               }
               onClick={() => {
                 setModalErrorMessage('');
