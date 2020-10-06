@@ -27,8 +27,8 @@ type SessionWithUser = Session & { user: User };
 
 const SessionRow: React.FC<FlexProps & { session: SessionWithUser }> = ({ session, ...props }) => {
   const [editable, setEditable] = useState(false);
-  const [correctedHours, setCorrectedHours] = useState('');
-  const [correctedMinutes, setCorrectedMinutes] = useState('');
+  const [correctedHours, setCorrectedHours] = useState(session.time.hours().toString());
+  const [correctedMinutes, setCorrectedMinutes] = useState(session.time.minutes().toString());
 
   const toast = useToast();
 
