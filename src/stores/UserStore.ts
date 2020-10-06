@@ -22,10 +22,12 @@ export default class UserStore {
     }
 
     autorun(() => {
-      if (this.password == null) {
-        localStorage.removeItem('password');
-      } else {
-        localStorage.setItem('password', this.password);
+      if (typeof localStorage != 'undefined') {
+        if (this.password == null) {
+          localStorage.removeItem('password');
+        } else {
+          localStorage.setItem('password', this.password);
+        }
       }
     });
 
