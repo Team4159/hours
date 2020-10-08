@@ -30,11 +30,6 @@ export default class UserStore {
         }
       }
     });
-
-    this.fetchOtherUserData();
-    if (process.env.NODE_ENV == 'production') {
-      setInterval(this.fetchOtherUserData, 1000);
-    }
   }
 
   @action.bound
