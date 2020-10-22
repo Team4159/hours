@@ -34,7 +34,7 @@ export default class UserStore {
 
   @action.bound
   fetchOtherUserData(): Promise<User[]> {
-    return fetch('/api/src/endpoints/getdata.php')
+    return fetch(process.env.API_URL + '/src/endpoints/getdata.php')
       .then(res => res.json())
       .then(json => {
         const otherUsers = json.map(UserStore.hydrateData);
@@ -50,7 +50,7 @@ export default class UserStore {
 
   @action.bound
   fetchUserData(set: boolean = true): Promise<User> {
-    return fetch('/api/src/endpoints/getuserdata.php?' + new URLSearchParams({
+    return fetch(process.env.API_URL + '/src/endpoints/getuserdata.php?' + new URLSearchParams({
       password: this.password
     }))
       .then(res => {
@@ -71,7 +71,7 @@ export default class UserStore {
 
   @action
   changePassword(newPassword: string): Promise<User> {
-    return fetch('/api/src/endpoints/changepassword.php?' + new URLSearchParams({
+    return fetch(process.env.API_URL + '/src/endpoints/changepassword.php?' + new URLSearchParams({
       password: this.password,
       newpassword: newPassword
     }))
@@ -86,14 +86,14 @@ export default class UserStore {
   }
 
   signIn(): Promise<User> {
-    return fetch('/api/src/endpoints/signin.php?' + new URLSearchParams({
+    return fetch(process.env.API_URL + '/src/endpoints/signin.php?' + new URLSearchParams({
       password: this.password
     }))
       .then(() => this.fetchUserData());
   }
 
   signOut(did: string, sessionTime: number = null): Promise<User> {
-    return fetch('/api/src/endpoints/signout.php?' + new URLSearchParams({
+    return fetch(process.env.API_URL + '/src/endpoints/signout.php?' + new URLSearchParams({
       password: this.password,
       did,
       sessionTime: String(sessionTime)
