@@ -6,7 +6,7 @@ import '@/styles/base.css';
 function App({ Component, pageProps }) {
   return (
     <ThemeProvider theme={theme}>
-      <Component {...pageProps}/>
+      <Component {...pageProps} />
     </ThemeProvider>
   );
 }

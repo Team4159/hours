@@ -16,8 +16,7 @@ export default class UserStore {
       const storedPassword = localStorage.getItem('password');
       if (storedPassword) {
         this.password = storedPassword;
-        this.fetchUserData()
-          .catch(console.error);
+        this.fetchUserData().catch(console.error);
       }
     }
 
@@ -35,12 +34,15 @@ export default class UserStore {
   @action.bound
   fetchOtherUserData(): Promise<User[]> {
     return fetch(process.env.API_URL + '/src/endpoints/getdata.php')
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         const otherUsers = json.map(UserStore.hydrateData);
         this.otherUserData.replace(otherUsers);
         if (this.userData) {
-          if (this.otherUserData.find(user => user.name == this.userData.name).signedIn != this.userData.signedIn) {
+          if (
+            this.otherUserData.find((user) => user.name == this.userData.name)
+              .signedIn != this.userData.signedIn
+          ) {
             this.fetchUserData();
           }
         }
@@ -50,17 +52,21 @@ export default class UserStore {
 
   @action.bound
   fetchUserData(set: boolean = true): Promise<User> {
-    return fetch(process.env.API_URL + '/src/endpoints/getuserdata.php?' + new URLSearchParams({
-      password: this.password
-    }))
-      .then(res => {
+    return fetch(
+      process.env.API_URL +
+        '/src/endpoints/getuserdata.php?' +
+        new URLSearchParams({
+          password: this.password,
+        })
+    )
+      .then((res) => {
         if (res.status == 404) {
           throw new Error('Unable to find any matching accounts.');
         }
         return res;
       })
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         const user = UserStore.hydrateData(json);
         if (set) {
           this.userData = user;
@@ -71,11 +77,15 @@ export default class UserStore {
 
   @action
   changePassword(newPassword: string): Promise<User> {
-    return fetch(process.env.API_URL + '/src/endpoints/changepassword.php?' + new URLSearchParams({
-      password: this.password,
-      newpassword: newPassword
-    }))
-      .then(async res => {
+    return fetch(
+      process.env.API_URL +
+        '/src/endpoints/changepassword.php?' +
+        new URLSearchParams({
+          password: this.password,
+          newpassword: newPassword,
+        })
+    )
+      .then(async (res) => {
         if (res.status == 404) {
           throw new Error(await res.text());
         }
@@ -86,19 +96,25 @@ export default class UserStore {
   }
 
   signIn(): Promise<User> {
-    return fetch(process.env.API_URL + '/src/endpoints/signin.php?' + new URLSearchParams({
-      password: this.password
-    }))
-      .then(() => this.fetchUserData());
+    return fetch(
+      process.env.API_URL +
+        '/src/endpoints/signin.php?' +
+        new URLSearchParams({
+          password: this.password,
+        })
+    ).then(() => this.fetchUserData());
   }
 
   signOut(did: string, sessionTime: number = null): Promise<User> {
-    return fetch(process.env.API_URL + '/src/endpoints/signout.php?' + new URLSearchParams({
-      password: this.password,
-      did,
-      sessionTime: String(sessionTime)
-    }))
-      .then(() => this.fetchUserData());
+    return fetch(
+      process.env.API_URL +
+        '/src/endpoints/signout.php?' +
+        new URLSearchParams({
+          password: this.password,
+          did,
+          sessionTime: String(sessionTime),
+        })
+    ).then(() => this.fetchUserData());
   }
 
   forgetPassword() {
@@ -113,12 +129,14 @@ export default class UserStore {
       signedIn: json['signedIn'],
       lastTime: moment.unix(json['lastTime']),
       totalTime: moment.duration(json['totalTime'], 'seconds'),
-      sessions: json['sessions'] ? json['sessions'].map(jsonSession => ({
-        date: moment.unix(parseInt(jsonSession['date'])),
-        did: jsonSession['did'],
-        time: moment.duration(jsonSession['time'], 'seconds'),
-        flagged: jsonSession['flagged']
-      })) : undefined
+      sessions: json['sessions']
+        ? json['sessions'].map((jsonSession) => ({
+            date: moment.unix(parseInt(jsonSession['date'])),
+            did: jsonSession['did'],
+            time: moment.duration(jsonSession['time'], 'seconds'),
+            flagged: jsonSession['flagged'],
+          }))
+        : undefined,
     };
   }
 }

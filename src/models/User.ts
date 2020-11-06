@@ -1,4 +1,4 @@
-import Session from "./Session";
+import Session from './Session';
 
 export default interface User {
   name: string;
